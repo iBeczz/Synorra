@@ -138,6 +138,14 @@
     font-size: 11px; cursor: pointer; white-space: nowrap;
   }
   .filter-clear:hover { color: var(--orange); border-color: var(--orange-glow); }
+  .filter-date {
+    flex: 1; background: var(--bg); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 5px 6px;
+    color: var(--muted); font-family: var(--mono); font-size: 11px;
+    outline: none; cursor: pointer; color-scheme: dark; min-width: 0;
+  }
+  .filter-date:focus { border-color: var(--orange-glow); }
+  .filter-date-label { font-size: 10px; color: var(--faint); font-family: var(--mono); white-space: nowrap; }
   .sidebar-count { font-size: 10px; color: var(--faint); font-family: var(--mono); padding: 6px 20px 4px; }
 
   .activity-item {
@@ -403,6 +411,7 @@
   .splits-panel {
     width: 340px;
     flex-shrink: 0;
+    height: 620px;
     overflow-y: auto;
     border-radius: 10px;
     border: 1px solid var(--border);
@@ -418,7 +427,7 @@
   .map-panel { flex: 1; min-width: 0; }
 
   #run-map {
-    width: 100%; height: 540px;
+    width: 100%; height: 620px;
     border-radius: 10px; overflow: hidden;
     border: 1px solid var(--border);
   }
@@ -544,6 +553,12 @@
           <option value="365">Last year</option>
         </select>
         <button class="filter-clear" onclick="clearFilters()">Clear</button>
+      </div>
+      <div class="filter-row" style="align-items:center; gap:6px;">
+        <span class="filter-date-label">From</span>
+        <input type="date" class="filter-date" id="filter-date-from" onchange="applyFilters()">
+        <span class="filter-date-label">to</span>
+        <input type="date" class="filter-date" id="filter-date-to" onchange="applyFilters()">
       </div>
     </div>
     <div class="sidebar-count" id="sidebar-count"></div>
@@ -783,10 +798,12 @@ function renderSidebar(acts) {
 
 // ─── FILTERS ───
 function applyFilters() {
-  const name   = (document.getElementById('filter-name')?.value || '').toLowerCase();
-  const dist   = document.getElementById('filter-dist')?.value || '';
-  const type   = document.getElementById('filter-type')?.value;
-  const period = parseInt(document.getElementById('filter-period')?.value || '0');
+  const name      = (document.getElementById('filter-name')?.value || '').toLowerCase();
+  const dist      = document.getElementById('filter-dist')?.value || '';
+  const type      = document.getElementById('filter-type')?.value;
+  const period    = parseInt(document.getElementById('filter-period')?.value || '0');
+  const dateFrom  = document.getElementById('filter-date-from')?.value || '';
+  const dateTo    = document.getElementById('filter-date-to')?.value   || '';
 
   const now = Date.now();
   const filtered = activities.filter(a => {
@@ -801,6 +818,11 @@ function applyFilters() {
       const actDate = new Date(a.start_date_local).getTime();
       if (now - actDate > period * 86400000) return false;
     }
+    if (dateFrom || dateTo) {
+      const actDay = (a.start_date_local || '').slice(0, 10);
+      if (dateFrom && actDay < dateFrom) return false;
+      if (dateTo   && actDay > dateTo)   return false;
+    }
     return true;
   });
 
@@ -810,11 +832,8 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  const ids = ['filter-name','filter-dist','filter-type','filter-period'];
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; }
-  });
+  ['filter-name','filter-dist','filter-type','filter-period','filter-date-from','filter-date-to']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   applyFilters();
 }
 
