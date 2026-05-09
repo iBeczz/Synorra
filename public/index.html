@@ -396,13 +396,37 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-  /* ─── MAP ─── */
+  /* ─── MAP + SPLITS LAYOUT ─── */
   .map-section { margin-bottom: 28px; }
+  .map-splits-layout { display: flex; gap: 14px; align-items: stretch; }
+
+  .splits-panel {
+    width: 212px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .splits-panel-head {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--faint);
+    padding: 10px 12px 6px; position: sticky; top: 0;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    z-index: 1;
+  }
+  .map-panel { flex: 1; min-width: 0; }
+
   #run-map {
     width: 100%; height: 540px;
     border-radius: 10px; overflow: hidden;
     border: 1px solid var(--border);
   }
+
+  .split-row { cursor: pointer; transition: background 0.1s; }
+  .split-row:hover { background: rgba(252,76,2,0.07) !important; }
+  .split-row.km-active { background: rgba(252,76,2,0.12) !important; }
+  .split-row.km-active td { color: var(--orange) !important; }
   .map-tooltip {
     background: #1e2021 !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
@@ -841,7 +865,7 @@ function renderDetail(act, streams) {
 
   const zones = calcZones(hr, time);
   const spikes = detectSpikes(hr, vel, alt, time, dist, grade);
-  const splits = buildSplitsTable(hr, vel, alt, dist, time);
+  const splits = buildSplitsTable(hr, vel, alt, dist, time, cad);
 
   const detail = document.getElementById('detail');
   detail.innerHTML = `
@@ -887,15 +911,39 @@ function renderDetail(act, streams) {
           <button class="map-tab" onclick="setMapMode('pace',this)">Colour by Pace</button>
           <button class="map-tab" onclick="setMapMode('grade',this)">Colour by Grade</button>
         </div>
-        <div id="run-map"></div>
-        <div class="map-color-legend">
-          <span id="map-legend-low">Low</span>
-          <div class="map-color-bar"></div>
-          <span id="map-legend-high">High</span>
-        </div>
-        <div class="map-color-labels">
-          <span id="map-label-low"></span>
-          <span id="map-label-high"></span>
+        <div class="map-splits-layout">
+          ${splits.length ? `
+          <div class="splits-panel">
+            <div class="splits-panel-head">Per-km splits</div>
+            <table class="splits-table">
+              <thead><tr>
+                <th>KM</th><th>Pace</th><th>HR</th><th>Elev</th><th>Cad</th>
+              </tr></thead>
+              <tbody>
+                ${splits.map(s => `<tr class="split-row" data-km="${s.km}"
+                  onmouseenter="highlightKmOnMap(${s.km})"
+                  onmouseleave="clearKmHighlight()">
+                  <td>${s.km}</td>
+                  <td class="${s.paceClass}">${s.pace}</td>
+                  <td class="${s.hrClass}">${s.hr}</td>
+                  <td>${s.elev}</td>
+                  <td>${s.cad}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>` : ''}
+          <div class="map-panel">
+            <div id="run-map"></div>
+            <div class="map-color-legend">
+              <span id="map-legend-low">Low</span>
+              <div class="map-color-bar"></div>
+              <span id="map-legend-high">High</span>
+            </div>
+            <div class="map-color-labels">
+              <span id="map-label-low"></span>
+              <span id="map-label-high"></span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -929,26 +977,6 @@ function renderDetail(act, streams) {
         </div>
       </div>` : ''}
 
-      ${splits.length ? `
-      <div class="section">
-        <div class="section-head">Per-km splits</div>
-        <div class="chart-box" style="padding:0; overflow:hidden;">
-          <table class="splits-table">
-            <thead><tr>
-              <th>KM</th><th>Pace</th><th>HR</th><th>Elev</th><th>Cadence</th>
-            </tr></thead>
-            <tbody>
-              ${splits.map(s => `<tr>
-                <td>${s.km}</td>
-                <td class="${s.paceClass}">${s.pace}</td>
-                <td class="${s.hrClass}">${s.hr}</td>
-                <td>${s.elev}</td>
-                <td>${s.cad}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>` : ''}
 
       <div class="section">
         <div class="section-head">Session notes</div>
@@ -1092,6 +1120,41 @@ let mapMarker = null;
 let mapPolylines = [];
 let mapMode = 'hr';
 let mapStreamData = null;
+let mapSplitHighlight = null;
+
+function highlightKmOnMap(km) {
+  if (!leafletMap || !mapStreamData) return;
+  clearKmHighlight();
+
+  const latlng = mapStreamData.latlng?.data || [];
+  const dist   = mapStreamData.distance?.data || [];
+  if (latlng.length < 2) return;
+
+  const startM = (km - 1) * 1000;
+  const endM   = km * 1000;
+  const pts = [];
+  for (let i = 0; i < latlng.length; i++) {
+    if (dist[i] >= startM && dist[i] <= endM) pts.push(latlng[i]);
+  }
+  if (pts.length < 2) return;
+
+  mapSplitHighlight = L.polyline(pts, {
+    color: 'white', weight: 7, opacity: 0.92,
+    lineJoin: 'round', lineCap: 'round'
+  }).addTo(leafletMap);
+
+  document.querySelectorAll('.split-row').forEach(r => r.classList.remove('km-active'));
+  const row = document.querySelector(`.split-row[data-km="${km}"]`);
+  if (row) row.classList.add('km-active');
+}
+
+function clearKmHighlight() {
+  if (mapSplitHighlight && leafletMap) {
+    leafletMap.removeLayer(mapSplitHighlight);
+    mapSplitHighlight = null;
+  }
+  document.querySelectorAll('.split-row').forEach(r => r.classList.remove('km-active'));
+}
 
 function setMapMode(mode, btn) {
   document.querySelectorAll('.map-tab').forEach(b => b.classList.remove('active'));
@@ -1335,7 +1398,7 @@ function detectSpikes(hrData, velData, altData, timeData, distData, gradeData) {
 }
 
 // ─── SPLITS TABLE ───
-function buildSplitsTable(hrData, velData, altData, distData, timeData) {
+function buildSplitsTable(hrData, velData, altData, distData, timeData, cadData) {
   if (!distData.length) return [];
   const totalKm = Math.floor(distData[distData.length-1] / 1000);
   if (totalKm < 1) return [];
@@ -1351,13 +1414,15 @@ function buildSplitsTable(hrData, velData, altData, distData, timeData) {
     const segHR  = idxs.map(i => hrData[i]).filter(Boolean);
     const segVel = idxs.map(i => velData[i]).filter(v => v > 0);
     const segAlt = idxs.map(i => altData[i]).filter(v => v !== undefined);
+    const segCad = cadData ? idxs.map(i => cadData[i]).filter(v => v > 0) : [];
 
     const paceVal  = segVel.length ? avg(segVel) : 0;
     const hrVal    = segHR.length  ? Math.round(avg(segHR)) : null;
     const elevDiff = segAlt.length > 1 ? Math.round(segAlt[segAlt.length-1] - segAlt[0]) : null;
+    const cadVal   = segCad.length ? Math.round(avg(segCad) * 2) : null;
 
     allPaces.push(paceVal);
-    splits.push({ km, paceVal, hrVal, elevDiff });
+    splits.push({ km, paceVal, hrVal, elevDiff, cadVal });
   }
 
   const avgPaceVal = avg(allPaces.filter(v=>v>0));
@@ -1369,7 +1434,7 @@ function buildSplitsTable(hrData, velData, altData, distData, timeData) {
     hr: s.hrVal ? s.hrVal + ' bpm' : '--',
     hrClass: s.hrVal > 170 ? 'hr-high' : s.hrVal > 155 ? 'hr-med' : '',
     elev: s.elevDiff !== null ? (s.elevDiff >= 0 ? '+' : '') + s.elevDiff + 'm' : '--',
-    cad: '--'
+    cad: s.cadVal ? s.cadVal + ' spm' : '--'
   }));
 }
 
@@ -2020,7 +2085,7 @@ function copyToClipboard() {
   }
 
   const spikes = detectSpikes(hr, vel, alt, time, dist, grade);
-  const splits = buildSplitsTable(hr, vel, alt, dist, time);
+  const splits = buildSplitsTable(hr, vel, alt, dist, time, cad);
   const zones  = calcZones(hr, time);
 
   const hasCad    = stream100m.some(p => !p.isPause && p.cad);
