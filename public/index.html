@@ -1390,7 +1390,7 @@ function updateWhoopBtn() {
 }
 
 function connectWhoop() {
-  const scope = 'offline read:recovery read:sleep read:cycles';
+  const scope = 'offline read:recovery read:sleep read:cycles read:body_measurement';
   const nonce = Math.random().toString(36).slice(2, 10);
   const state = `whoopauth_${nonce}`;
   const params = new URLSearchParams({
