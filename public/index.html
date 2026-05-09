@@ -549,6 +549,7 @@ let streamData = null;
 let currentActivity = null;
 let activities = [];
 let whoopData = null;
+let whoopConnectError = null;
 
 // ─── UTILS ───
 function fmtPace(mps) {
@@ -648,10 +649,12 @@ async function init() {
       const whoopTok = await exchangeWhoopCode(code);
       saveWhoopToken(whoopTok);
     } catch(e) {
-      // Non-fatal — still load the app, Whoop just won't be connected
-      console.error('Whoop connection failed:', e.message);
+      whoopConnectError = e.message;
     }
     await showApp(null);
+    if (whoopConnectError) {
+      showWhoopError(whoopConnectError);
+    }
     return;
   }
 
@@ -1382,6 +1385,25 @@ function promptWhoopDisconnect() {
   }
 }
 
+function showWhoopError(msg) {
+  // Mark the button red so the error is obvious in the topbar
+  const btn = document.getElementById('whoop-btn');
+  if (btn) {
+    btn.style.borderColor = 'var(--red)';
+    btn.style.color = 'var(--red)';
+  }
+  // Inject a dismissable banner into the main panel
+  const main = document.getElementById('main-panel');
+  if (!main) return;
+  const existing = document.getElementById('whoop-error-banner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'whoop-error-banner';
+  banner.style.cssText = 'margin:16px 24px 0;padding:12px 16px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:8px;font-size:13px;color:var(--red);display:flex;justify-content:space-between;align-items:center;gap:12px;';
+  banner.innerHTML = `<span>Whoop connection failed: <strong>${escapeHtml(msg)}</strong> — check your Netlify environment variables are saved and the site has been redeployed.</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;line-height:1;">×</button>`;
+  main.prepend(banner);
+}
+
 async function exchangeWhoopCode(code) {
   const r = await fetch('/.netlify/functions/whoop-token', {
     method: 'POST',
@@ -1390,7 +1412,7 @@ async function exchangeWhoopCode(code) {
   });
   const d = await r.json();
   if (d.access_token) return d;
-  throw new Error(d.error || 'Whoop authentication failed');
+  throw new Error(d.error || `Token exchange failed (HTTP ${r.status})`);
 }
 
 function renderWhoopSection() {
@@ -1399,8 +1421,12 @@ function renderWhoopSection() {
 
   const tok = getWhoopToken();
   if (!tok) {
+    const errHtml = whoopConnectError
+      ? `<div class="error-banner" style="margin-bottom:10px;">Last connection attempt failed: <strong>${escapeHtml(whoopConnectError)}</strong><br>Check your Netlify environment variables (WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, WHOOP_REDIRECT_URI) are set and the site has been redeployed.</div>`
+      : '';
     section.innerHTML = `
       <div class="section-head">Whoop Recovery</div>
+      ${errHtml}
       <div class="whoop-not-connected">
         <a href="#" onclick="connectWhoop(); return false;">Connect your Whoop account</a> to pull recovery data alongside this session.
       </div>`;
