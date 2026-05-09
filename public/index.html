@@ -404,6 +404,25 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+  .chart-ext-tooltip {
+    position: absolute; pointer-events: none; top: 10px;
+    background: #1e2021; border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px; padding: 8px 12px;
+    font-family: var(--mono); font-size: 11px; color: #f0ede8;
+    z-index: 10; white-space: nowrap; opacity: 0;
+    transition: opacity 0.1s, left 0.04s;
+  }
+
+  .zone-edit-btn {
+    font-family: var(--mono); font-size: 10px;
+    background: none; border: 1px solid var(--border2);
+    color: var(--faint); border-radius: 4px;
+    padding: 2px 8px; cursor: pointer; margin-left: 8px;
+  }
+  .zone-edit-btn:hover { color: var(--orange); border-color: var(--orange-glow); }
+
+  .filter-clear.has-filter { border-color: var(--orange-glow); color: var(--orange); }
+
   /* ─── MAP + SPLITS LAYOUT ─── */
   .map-section { margin-bottom: 28px; }
   .map-splits-layout { display: flex; gap: 14px; align-items: stretch; }
@@ -590,6 +609,71 @@ let currentActivity = null;
 let activities = [];
 let whoopData = null;
 let whoopConnectError = null;
+
+let chartSplitActiveKm = null;
+let pinnedSplitKm = null;
+
+let activeStreams = new Set(['hr', 'pace']);
+
+const STREAM_CFG = {
+  hr:    { label:'HR',      color:'#f87171', unit:'bpm',  side:'left',  key:'heartrate',        xform: v => v || null, reversed: false, fill: false },
+  pace:  { label:'Pace',    color:'#60a5fa', unit:'/km',  side:'right', key:'velocity_smooth',  xform: v => v > 0 ? parseFloat((1000/v/60).toFixed(3)) : null, reversed: true, fill: false },
+  elev:  { label:'Elev',    color:'#4ade80', unit:'m',    side:'right', key:'altitude',         xform: v => v ?? null, reversed: false, fill: true  },
+  cad:   { label:'Cadence', color:'#c084fc', unit:'spm',  side:'left',  key:'cadence',          xform: v => v ? v*2 : null, reversed: false, fill: false },
+  grade: { label:'Grade',   color:'#fbbf24', unit:'%',    side:'left',  key:'grade_smooth',     xform: v => v ?? null, reversed: false, fill: false },
+  power: { label:'Power',   color:'#e879f9', unit:'W',    side:'left',  key:'watts',            xform: v => v || null, reversed: false, fill: false }
+};
+
+let customZoneBounds = null;
+function loadZoneBounds() {
+  try { customZoneBounds = JSON.parse(localStorage.getItem('tl_zone_bounds')); } catch {}
+}
+loadZoneBounds();
+
+const splitHighlightPlugin = {
+  id: 'splitHighlight',
+  afterDatasetsDraw(chart) {
+    if (chartSplitActiveKm == null) return;
+    const { ctx, chartArea } = chart;
+    const labels = chart.data.labels;
+    const startKm = chartSplitActiveKm - 1;
+    const endKm   = chartSplitActiveKm;
+    const meta = chart.getDatasetMeta(0);
+    if (!meta.data.length) return;
+    let si = 0, ei = meta.data.length - 1;
+    for (let i = 0; i < labels.length; i++) {
+      if (parseFloat(labels[i]) <= startKm) si = i;
+      if (parseFloat(labels[i]) <= endKm)   ei = i;
+    }
+    const x0 = meta.data[si]?.x ?? chartArea.left;
+    const x1 = meta.data[ei]?.x ?? chartArea.right;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    if (x0 > chartArea.left) ctx.fillRect(chartArea.left, chartArea.top, x0 - chartArea.left, chartArea.height);
+    if (x1 < chartArea.right) ctx.fillRect(x1, chartArea.top, chartArea.right - x1, chartArea.height);
+    ctx.restore();
+  }
+};
+
+const crosshairPlugin = {
+  id: 'crosshair',
+  afterDatasetsDraw(chart) {
+    if (!chart._hoverX) return;
+    const { ctx, chartArea } = chart;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(chart._hoverX, chartArea.top);
+    ctx.lineTo(chart._hoverX, chartArea.bottom);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+    ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+Chart.register(splitHighlightPlugin);
+Chart.register(crosshairPlugin);
 
 // ─── UTILS ───
 function fmtPace(mps) {
@@ -829,6 +913,12 @@ function applyFilters() {
   renderSidebar(filtered);
   const count = document.getElementById('sidebar-count');
   if (count) count.textContent = `${filtered.length} of ${activities.length} runs`;
+  updateClearBtn();
+}
+
+function updateClearBtn() {
+  const active = ['filter-name','filter-dist','filter-type','filter-period','filter-date-from','filter-date-to'].some(id => document.getElementById(id)?.value);
+  document.querySelector('.filter-clear')?.classList.toggle('has-filter', active);
 }
 
 function clearFilters() {
@@ -911,11 +1001,12 @@ function renderDetail(act, streams) {
       <div class="section">
         <div class="section-head">Stream data</div>
         <div class="chart-tabs" id="chart-tabs">
-          ${hr.length && vel.length ? `<button class="chart-tab active" onclick="switchTab('hr_pace',this)">HR + Pace</button>` : ''}
-          ${hr.length && alt.length ? `<button class="chart-tab" onclick="switchTab('hr_elev',this)">HR + Elevation</button>` : ''}
-          ${vel.length && alt.length ? `<button class="chart-tab" onclick="switchTab('pace_elev',this)">Pace + Elevation</button>` : ''}
-          ${cad.length ? `<button class="chart-tab" onclick="switchTab('cadence',this)">Cadence</button>` : ''}
-          ${grade.length ? `<button class="chart-tab" onclick="switchTab('grade',this)">Grade</button>` : ''}
+          ${hr.length  ? `<button class="chart-tab" data-stream="hr"    onclick="toggleStream('hr',this)"    style="border-color:#f87171;color:#f87171;background:#f8717118;">HR</button>` : ''}
+          ${vel.length ? `<button class="chart-tab" data-stream="pace"  onclick="toggleStream('pace',this)"  style="border-color:#60a5fa;color:#60a5fa;background:#60a5fa18;">Pace</button>` : ''}
+          ${alt.length ? `<button class="chart-tab" data-stream="elev"  onclick="toggleStream('elev',this)">Elevation</button>` : ''}
+          ${cad.length ? `<button class="chart-tab" data-stream="cad"   onclick="toggleStream('cad',this)">Cadence</button>` : ''}
+          ${grade.length ? `<button class="chart-tab" data-stream="grade" onclick="toggleStream('grade',this)">Grade</button>` : ''}
+          ${streams.watts?.data?.length ? `<button class="chart-tab" data-stream="power" onclick="toggleStream('power',this)">Power</button>` : ''}
         </div>
         <div class="chart-box">
           <div class="chart-legend" id="chart-legend"></div>
@@ -941,7 +1032,8 @@ function renderDetail(act, streams) {
               <tbody>
                 ${splits.map(s => `<tr class="split-row" data-km="${s.km}"
                   onmouseenter="highlightKmOnMap(${s.km})"
-                  onmouseleave="clearKmHighlight()">
+                  onmouseleave="clearKmHighlight()"
+                  onclick="toggleSplitPin(${s.km})">
                   <td>${s.km}</td>
                   <td class="${s.paceClass}">${s.pace}</td>
                   <td class="${s.hrClass}">${s.hr}</td>
@@ -966,9 +1058,28 @@ function renderDetail(act, streams) {
         </div>
       </div>
 
-      ${zones.length ? `
+      ${zones.length || true ? `
       <div class="section">
-        <div class="section-head">Heart rate zones</div>
+        <div class="section-head">Heart rate zones
+          <button class="zone-edit-btn" onclick="toggleZoneEditor()">Edit zones</button>
+        </div>
+        <div id="zone-editor" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:12px;color:var(--muted);">
+          <div style="font-size:10px;color:var(--faint);margin-bottom:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;">Set zone boundaries in BPM</div>
+          ${['Z1/Z2','Z2/Z3','Z3/Z4','Z4/Z5'].map((label, i) => {
+            const keys = ['z12','z23','z34','z45'];
+            const defaults = [120,148,162,174];
+            const b = customZoneBounds || {};
+            return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:11px;width:60px;">${label}</span>
+              <input type="number" id="zb_${keys[i]}" class="effort-input" style="width:70px;padding:4px 8px;" value="${b[keys[i]] || defaults[i]}" min="60" max="220">
+              <span style="font-size:11px;color:var(--faint);">bpm</span>
+            </div>`;
+          }).join('')}
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn-disconnect" style="font-size:11px;padding:4px 12px;" onclick="saveZoneBounds()">Save &amp; apply</button>
+            <button class="btn-disconnect" style="font-size:11px;padding:4px 12px;" onclick="resetZoneBounds()">Reset defaults</button>
+          </div>
+        </div>
         ${zones.map(z => `
           <div class="zone-row">
             <span class="zone-name">${z.name}</span>
@@ -997,138 +1108,123 @@ function renderDetail(act, streams) {
       </div>` : ''}
 
 
-      <div class="section">
-        <div class="section-head">Session notes</div>
-        <div class="effort-wrap">
-          <div class="effort-row">
-            <span class="effort-lbl">Perceived effort</span>
-            <select class="effort-select" id="effort-rating">
-              <option value="">--</option>
-              ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}">${n}</option>`).join('')}
-            </select>
-            <span class="effort-hint">/ 10</span>
-          </div>
-          <div class="effort-row">
-            <span class="effort-lbl">How I felt</span>
-            <input type="text" class="effort-input" id="effort-notes" placeholder="e.g. legs felt heavy, strong finish…" maxlength="300">
-          </div>
-        </div>
-      </div>
-
       <div class="section" id="whoop-section"></div>
 
     </div>
   `;
 
-  buildChart('hr_pace', streams, time, dist);
+  activeStreams = new Set(['hr', 'pace']);
+  pinnedSplitKm = null; chartSplitActiveKm = null;
+  rebuildChart();
   initMap(streams);
   renderWhoopSection();
 }
 
 // ─── CHART ───
-let activeTab = 'hr_pace';
-
-function switchTab(mode, btn) {
-  document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  activeTab = mode;
-  if (currentChart) { currentChart.destroy(); currentChart = null; }
-  buildChart(mode, streamData, streamData.time?.data || [], streamData.distance?.data || []);
+function toggleStream(key, btn) {
+  if (activeStreams.has(key)) {
+    if (activeStreams.size === 1) return; // keep at least one
+    activeStreams.delete(key);
+  } else {
+    activeStreams.add(key);
+  }
+  document.querySelectorAll('.chart-tab[data-stream]').forEach(b => {
+    const k = b.dataset.stream;
+    const on = activeStreams.has(k);
+    const c = STREAM_CFG[k]?.color || 'var(--orange)';
+    b.style.borderColor = on ? c : '';
+    b.style.color       = on ? c : '';
+    b.style.background  = on ? c + '18' : '';
+  });
+  rebuildChart();
 }
 
-function buildChart(mode, streams, timeArr, distArr) {
-  const hr = streams.heartrate?.data || [];
-  const vel = streams.velocity_smooth?.data || [];
-  const alt = streams.altitude?.data || [];
-  const cad = streams.cadence?.data || [];
-  const grade = streams.grade_smooth?.data || [];
-
-  const N = timeArr.length;
-  if (!N) return;
-
+function rebuildChart() {
+  if (!streamData) return;
+  const timeArr = streamData.time?.data || [];
+  const distArr = streamData.distance?.data || [];
+  const N = timeArr.length; if (!N) return;
   const step = Math.max(1, Math.floor(N / 400));
-  const labels = [], d1 = [], d2 = [];
+  const labels = [];
+  for (let i = 0; i < N; i += step) labels.push(distArr[i] ? (distArr[i]/1000).toFixed(2) : (timeArr[i]/60).toFixed(1));
 
-  for (let i = 0; i < N; i += step) {
-    labels.push(distArr[i] ? (distArr[i]/1000).toFixed(2) : (timeArr[i]/60).toFixed(1));
-    if (mode === 'hr_pace') {
-      d1.push(hr[i] || null);
-      d2.push(vel[i] > 0 ? parseFloat((1000/vel[i]/60).toFixed(3)) : null);
-    } else if (mode === 'hr_elev') {
-      d1.push(hr[i] || null);
-      d2.push(alt[i] ?? null);
-    } else if (mode === 'pace_elev') {
-      d1.push(vel[i] > 0 ? parseFloat((1000/vel[i]/60).toFixed(3)) : null);
-      d2.push(alt[i] ?? null);
-    } else if (mode === 'cadence') {
-      d1.push(cad[i] ? cad[i]*2 : null);
-      d2.push(hr[i] || null);
-    } else if (mode === 'grade') {
-      d1.push(grade[i] ?? null);
-      d2.push(hr[i] || null);
-    }
+  const datasets = [];
+  const axes = {};
+  let leftUsed = false, rightUsed = false;
+
+  for (const [key, cfg] of Object.entries(STREAM_CFG)) {
+    if (!activeStreams.has(key)) continue;
+    const raw = streamData[cfg.key]?.data || [];
+    if (!raw.length) continue;
+    const data = [];
+    for (let i = 0; i < N; i += step) data.push(cfg.xform(raw[i] ?? null));
+    const axId = 'y_' + key;
+    const isRight = cfg.side === 'right';
+    const showAxis = isRight ? !rightUsed : !leftUsed;
+    if (isRight) rightUsed = true; else leftUsed = true;
+    axes[axId] = {
+      position: isRight ? 'right' : 'left',
+      reverse: cfg.reversed,
+      display: showAxis,
+      ticks: { color: cfg.color, font: { size: 10, family: "'DM Mono', monospace" }, maxTicksLimit: 6 },
+      grid: { color: showAxis ? 'rgba(255,255,255,0.06)' : 'transparent', display: showAxis }
+    };
+    datasets.push({
+      label: cfg.label, data,
+      borderColor: cfg.color,
+      backgroundColor: cfg.color + '18',
+      borderWidth: 1.5, pointRadius: 0,
+      yAxisID: axId, fill: cfg.fill,
+      tension: 0.3, spanGaps: true,
+      _unit: cfg.unit, _reversed: cfg.reversed
+    });
   }
 
-  const cfgs = {
-    hr_pace:   { l1:'Heart rate', l2:'Pace', c1:'#f87171', c2:'#60a5fa', y2rev:true, u1:'bpm', u2:'min/km' },
-    hr_elev:   { l1:'Heart rate', l2:'Elevation', c1:'#f87171', c2:'#4ade80', c2fill:true, u1:'bpm', u2:'m' },
-    pace_elev: { l1:'Pace', l2:'Elevation', c1:'#60a5fa', c2:'#4ade80', y1rev:true, c2fill:true, u1:'min/km', u2:'m' },
-    cadence:   { l1:'Cadence (spm)', l2:'Heart rate', c1:'#c084fc', c2:'#f87171', u1:'spm', u2:'bpm' },
-    grade:     { l1:'Grade %', l2:'Heart rate', c1:'#fbbf24', c2:'#f87171', u1:'%', u2:'bpm' }
-  };
+  if (!datasets.length) return;
 
-  const cfg = cfgs[mode] || cfgs.hr_pace;
+  const canvas = document.getElementById('main-chart'); if (!canvas) return;
+  if (currentChart) { currentChart.destroy(); currentChart = null; }
 
   const legend = document.getElementById('chart-legend');
-  if (legend) legend.innerHTML = `
-    <div class="legend-item"><div class="legend-dot" style="background:${cfg.c1}"></div>${cfg.l1}</div>
-    <div class="legend-item"><div class="legend-dot" style="background:${cfg.c2}"></div>${cfg.l2}</div>
-  `;
-
-  const canvas = document.getElementById('main-chart');
-  if (!canvas) return;
+  if (legend) legend.innerHTML = datasets.map(ds => `<div class="legend-item"><div class="legend-dot" style="background:${ds.borderColor}"></div>${ds.label}</div>`).join('');
 
   currentChart = new Chart(canvas, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: cfg.l1, data: d1, borderColor: cfg.c1, backgroundColor: cfg.c1 + '20', borderWidth: 1.5, pointRadius: 0, yAxisID: 'y1', fill: true, tension: 0.3, spanGaps: true },
-        { label: cfg.l2, data: d2, borderColor: cfg.c2, backgroundColor: cfg.c2fill ? cfg.c2 + '30' : 'transparent', borderWidth: 1.5, pointRadius: 0, yAxisID: 'y2', fill: !!cfg.c2fill, tension: 0.3, spanGaps: true }
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      onHover: (evt, elements) => {
-        if (elements && elements.length > 0) syncMapToChartIndex(elements[0].index);
-      },
+      onHover: (evt, elements) => { if (elements.length > 0) syncMapToChartIndex(elements[0].index); },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1e2021', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-          titleColor: '#888580', bodyColor: '#f0ede8',
-          callbacks: {
-            title: ctx => `${ctx[0].label} km`,
-            label: ctx => {
-              const v = ctx.parsed.y; if (v == null) return null;
-              const isY1 = ctx.datasetIndex === 0;
-              const unit = isY1 ? cfg.u1 : cfg.u2;
-              const isRevPace = (isY1 && cfg.y1rev) || (!isY1 && cfg.y2rev);
-              if (isRevPace && unit === 'min/km') {
-                const min = Math.floor(v); const sec = Math.round((v-min)*60);
-                return ` ${ctx.dataset.label}: ${min}:${String(sec).padStart(2,'0')} /km`;
-              }
-              return ` ${ctx.dataset.label}: ${v.toFixed(1)} ${unit}`;
+          enabled: false,
+          external(context) {
+            const { chart, tooltip } = context;
+            let el = chart.canvas.parentNode.querySelector('.chart-ext-tooltip');
+            if (!el) {
+              el = document.createElement('div'); el.className = 'chart-ext-tooltip';
+              chart.canvas.parentNode.style.position = 'relative';
+              chart.canvas.parentNode.appendChild(el);
             }
+            if (tooltip.opacity === 0) { el.style.opacity = '0'; chart._hoverX = null; chart.update('none'); return; }
+            chart._hoverX = tooltip.caretX; chart.update('none');
+            const title = tooltip.title?.[0] ? `<div style="color:#888580;margin-bottom:5px;">${tooltip.title[0]} km</div>` : '';
+            const lines = (tooltip.dataPoints||[]).map(dp => {
+              const v = dp.parsed.y; if (v == null) return '';
+              const ds = dp.dataset; const unit = ds._unit||'';
+              if (ds._reversed && unit==='/km') { const m=Math.floor(v),s=Math.round((v-m)*60); return `<div style="color:${ds.borderColor}">${ds.label}: ${m}:${String(s).padStart(2,'0')} /km</div>`; }
+              return `<div style="color:${ds.borderColor}">${ds.label}: ${v.toFixed(1)} ${unit}</div>`;
+            }).join('');
+            el.innerHTML = title+lines; el.style.opacity='1';
+            const x = tooltip.caretX+14, maxL = chart.canvas.parentNode.offsetWidth - el.offsetWidth - 8;
+            el.style.left = Math.min(x, maxL)+'px';
           }
-        }
+        },
+        crosshair: {},
+        splitHighlight: {}
       },
-      scales: {
-        x: { ticks: { maxTicksLimit: 10, color: '#444240', font: { size: 10, family: "'DM Mono', monospace" } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y1: { position: 'left', reverse: !!cfg.y1rev, ticks: { color: cfg.c1, font: { size: 10, family: "'DM Mono', monospace" } }, grid: { color: 'rgba(255,255,255,0.06)' } },
-        y2: { position: 'right', reverse: !!cfg.y2rev, ticks: { color: cfg.c2, font: { size: 10, family: "'DM Mono', monospace" } }, grid: { display: false } }
-      }
+      scales: { x: { ticks: { maxTicksLimit: 10, color: '#444240', font: { size: 10, family: "'DM Mono', monospace" } }, grid: { color: 'rgba(255,255,255,0.04)' } }, ...axes }
     }
   });
 }
@@ -1142,6 +1238,7 @@ let mapStreamData = null;
 let mapSplitHighlight = null;
 
 function highlightKmOnMap(km) {
+  if (pinnedSplitKm !== null && pinnedSplitKm !== km) return;
   if (!leafletMap || !mapStreamData) return;
   clearKmHighlight();
 
@@ -1165,14 +1262,30 @@ function highlightKmOnMap(km) {
   document.querySelectorAll('.split-row').forEach(r => r.classList.remove('km-active'));
   const row = document.querySelector(`.split-row[data-km="${km}"]`);
   if (row) row.classList.add('km-active');
+
+  chartSplitActiveKm = km;
+  if (currentChart) currentChart.update('none');
 }
 
 function clearKmHighlight() {
+  if (pinnedSplitKm !== null) return;
   if (mapSplitHighlight && leafletMap) {
     leafletMap.removeLayer(mapSplitHighlight);
     mapSplitHighlight = null;
   }
   document.querySelectorAll('.split-row').forEach(r => r.classList.remove('km-active'));
+  chartSplitActiveKm = null;
+  if (currentChart) currentChart.update('none');
+}
+
+function toggleSplitPin(km) {
+  if (pinnedSplitKm === km) {
+    pinnedSplitKm = null;
+    clearKmHighlight();
+  } else {
+    pinnedSplitKm = km;
+    highlightKmOnMap(km);
+  }
 }
 
 function setMapMode(mode, btn) {
@@ -1331,23 +1444,38 @@ function syncMapToChartIndex(chartIdx) {
 // ─── ZONES ───
 function calcZones(hrData, timeData) {
   if (!hrData.length) return [];
-  const maxHR = 200;
+  const b = customZoneBounds || { z12: 120, z23: 148, z34: 162, z45: 174 };
   const zones = [
-    { name: 'Z1 ·50-60%', min: 0,    max: 0.60, color: '#1d9e75', secs: 0 },
-    { name: 'Z2 ·60-70%', min: 0.60, max: 0.70, color: '#4ade80', secs: 0 },
-    { name: 'Z3 ·70-80%', min: 0.70, max: 0.80, color: '#fbbf24', secs: 0 },
-    { name: 'Z4 ·80-90%', min: 0.80, max: 0.90, color: '#f97316', secs: 0 },
-    { name: 'Z5 ·90%+',   min: 0.90, max: 1.00, color: '#f87171', secs: 0 }
+    { name: 'Z1', min: 0,     max: b.z12, color: '#1d9e75', secs: 0 },
+    { name: 'Z2', min: b.z12, max: b.z23, color: '#4ade80', secs: 0 },
+    { name: 'Z3', min: b.z23, max: b.z34, color: '#fbbf24', secs: 0 },
+    { name: 'Z4', min: b.z34, max: b.z45, color: '#f97316', secs: 0 },
+    { name: 'Z5', min: b.z45, max: 999,   color: '#f87171', secs: 0 }
   ];
   hrData.forEach((h, i) => {
-    const pct = h / maxHR;
     const dt = i > 0 ? timeData[i] - timeData[i-1] : 1;
-    for (let z = zones.length-1; z >= 0; z--) {
-      if (pct >= zones[z].min) { zones[z].secs += dt; break; }
-    }
+    for (let z = zones.length-1; z >= 0; z--) { if (h >= zones[z].min) { zones[z].secs += dt; break; } }
   });
   const total = zones.reduce((s,z) => s+z.secs, 0) || 1;
   return zones.map(z => ({ ...z, pct: Math.round(z.secs/total*100) })).filter(z => z.pct > 0);
+}
+
+function toggleZoneEditor() {
+  const el = document.getElementById('zone-editor');
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveZoneBounds() {
+  const bounds = { z12: +document.getElementById('zb_z12').value, z23: +document.getElementById('zb_z23').value, z34: +document.getElementById('zb_z34').value, z45: +document.getElementById('zb_z45').value };
+  customZoneBounds = bounds;
+  localStorage.setItem('tl_zone_bounds', JSON.stringify(bounds));
+  if (currentActivity && streamData) renderDetail(currentActivity, streamData);
+}
+
+function resetZoneBounds() {
+  customZoneBounds = null;
+  localStorage.removeItem('tl_zone_bounds');
+  if (currentActivity && streamData) renderDetail(currentActivity, streamData);
 }
 
 // ─── SPIKES ───
@@ -1999,11 +2127,24 @@ function formatWhoopForClipboard(d) {
 // ─── COPY TO CLIPBOARD ───
 function copyToClipboard() {
   if (!currentActivity || !streamData) return;
+  const modal = document.getElementById('copy-modal');
+  if (modal) {
+    document.getElementById('modal-effort').value = '';
+    document.getElementById('modal-notes').value = '';
+    modal.style.display = 'flex';
+  }
+}
+
+function executeCopy(includeNotes) {
+  const modal = document.getElementById('copy-modal');
+  if (modal) modal.style.display = 'none';
+
+  if (!currentActivity || !streamData) return;
 
   const startTime    = fmtClock(currentActivity.start_date_local);
   const endTime      = fmtClockEnd(currentActivity.start_date_local, currentActivity.elapsed_time || currentActivity.moving_time);
-  const effortRating = document.getElementById('effort-rating')?.value || '';
-  const effortNotes  = document.getElementById('effort-notes')?.value?.trim() || '';
+  const effortRating = includeNotes ? (document.getElementById('modal-effort')?.value || '') : '';
+  const effortNotes  = includeNotes ? (document.getElementById('modal-notes')?.value?.trim() || '') : '';
 
   const hr    = streamData.heartrate?.data || [];
   const vel   = streamData.velocity_smooth?.data || [];
@@ -2180,7 +2321,39 @@ ${streamLines}${whoopData ? formatWhoopForClipboard(whoopData) : ''}`;
   });
 }
 
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { const m = document.getElementById('copy-modal'); if (m) m.style.display = 'none'; } });
+
 init();
 </script>
+
+<div id="copy-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:460px;max-width:92vw;">
+    <div style="font-size:15px;font-weight:700;letter-spacing:-0.02em;margin-bottom:20px;color:var(--text);">Session notes <span style="font-weight:400;font-size:12px;color:var(--faint);">(optional — press Skip to copy without)</span></div>
+    <div class="effort-row" style="margin-bottom:14px;">
+      <span class="effort-lbl">Perceived effort</span>
+      <select class="effort-select" id="modal-effort" style="flex:1;">
+        <option value="">— skip —</option>
+        <option value="1">1 — Very easy</option>
+        <option value="2">2 — Easy</option>
+        <option value="3">3 — Moderate</option>
+        <option value="4">4 — Somewhat hard</option>
+        <option value="5">5 — Hard (low)</option>
+        <option value="6">6 — Hard (high)</option>
+        <option value="7">7 — Very hard (low)</option>
+        <option value="8">8 — Very hard (high)</option>
+        <option value="9">9 — Extremely hard</option>
+        <option value="10">10 — Maximum (all out effort)</option>
+      </select>
+    </div>
+    <div class="effort-row" style="margin-bottom:22px;">
+      <span class="effort-lbl">How I felt</span>
+      <input type="text" class="effort-input" id="modal-notes" placeholder="e.g. legs felt heavy, strong finish…" maxlength="300">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn-disconnect" onclick="executeCopy(false)">Skip &amp; copy</button>
+      <button onclick="executeCopy(true)" style="background:var(--orange);color:white;border:none;padding:8px 20px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">Add notes &amp; copy</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
