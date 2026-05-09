@@ -1586,7 +1586,7 @@ function renderWhoopData(data) {
     if (asleepMs > 0)            topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(asleepMs)}</div><div class="metric-lbl">Time asleep</div></div>`);
     if (sl.needed_milli != null) topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(sl.needed_milli)}</div><div class="metric-lbl">Sleep needed</div></div>`);
     if (sl.performance  != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.performance}%</div><div class="metric-lbl">Performance</div></div>`);
-    if (sl.efficiency   != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.efficiency}%</div><div class="metric-lbl">Efficiency</div></div>`);
+    if (sl.efficiency   != null) topCards.push(`<div class="metric"><div class="metric-val">${Math.round(sl.efficiency)}%</div><div class="metric-lbl">Efficiency</div></div>`);
     if (sl.consistency  != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.consistency}%</div><div class="metric-lbl">Consistency</div></div>`);
     if (sl.respiratory_rate != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.respiratory_rate.toFixed(1)}</div><div class="metric-lbl">Resp rate (br/m)</div></div>`);
     if (sl.disturbances != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.disturbances}</div><div class="metric-lbl">Disturbances</div></div>`);
@@ -1723,7 +1723,7 @@ function renderWhoopData(data) {
     if (asleepMs > 0)             topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(asleepMs)}</div><div class="metric-lbl">Time asleep</div></div>`);
     if (psl.needed_milli != null) topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(psl.needed_milli)}</div><div class="metric-lbl">Sleep needed</div></div>`);
     if (psl.performance  != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.performance}%</div><div class="metric-lbl">Performance</div></div>`);
-    if (psl.efficiency   != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.efficiency}%</div><div class="metric-lbl">Efficiency</div></div>`);
+    if (psl.efficiency   != null) topCards.push(`<div class="metric"><div class="metric-val">${Math.round(psl.efficiency)}%</div><div class="metric-lbl">Efficiency</div></div>`);
     if (psl.consistency  != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.consistency}%</div><div class="metric-lbl">Consistency</div></div>`);
     if (psl.respiratory_rate != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.respiratory_rate.toFixed(1)}</div><div class="metric-lbl">Resp rate (br/m)</div></div>`);
     if (psl.disturbances != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.disturbances}</div><div class="metric-lbl">Disturbances</div></div>`);
@@ -1817,7 +1817,7 @@ function formatWhoopForClipboard(d) {
       if (sl.needed_nap      != null && sl.needed_nap    !== 0) lines.push(`  + Nap credit:     ${sl.needed_nap > 0 ? '+' : '-'}${fmtMs(Math.abs(sl.needed_nap))}`);
     }
     if (sl.performance  != null) lines.push(`Performance:        ${sl.performance}%`);
-    if (sl.efficiency   != null) lines.push(`Efficiency:         ${sl.efficiency}%`);
+    if (sl.efficiency   != null) lines.push(`Efficiency:         ${Math.round(sl.efficiency)}%`);
     if (sl.consistency  != null) lines.push(`Consistency:        ${sl.consistency}%`);
     if (sl.respiratory_rate != null) lines.push(`Respiratory rate:   ${sl.respiratory_rate.toFixed(1)} br/min`);
     if (sl.disturbances != null) lines.push(`Disturbances:       ${sl.disturbances}`);
@@ -1873,7 +1873,7 @@ function formatWhoopForClipboard(d) {
       if (psl.needed_nap    != null && psl.needed_nap    !== 0) lines.push(`  + Nap credit:     ${psl.needed_nap > 0 ? '+' : '-'}${fmtMs(Math.abs(psl.needed_nap))}`);
     }
     if (psl.performance  != null) lines.push(`Performance:        ${psl.performance}%`);
-    if (psl.efficiency   != null) lines.push(`Efficiency:         ${psl.efficiency}%`);
+    if (psl.efficiency   != null) lines.push(`Efficiency:         ${Math.round(psl.efficiency)}%`);
     if (psl.consistency  != null) lines.push(`Consistency:        ${psl.consistency}%`);
     if (psl.respiratory_rate != null) lines.push(`Respiratory rate:   ${psl.respiratory_rate.toFixed(1)} br/min`);
     if (psl.disturbances != null) lines.push(`Disturbances:       ${psl.disturbances}`);
