@@ -1480,7 +1480,10 @@ async function fetchWhoopData() {
 
   try {
     const payload = { ...tok };
-    if (currentActivity?.start_date_local) payload.activity_start = currentActivity.start_date_local;
+    // Use UTC start_date (has Z suffix) so server-side comparison with Whoop UTC times is accurate
+    if (currentActivity?.start_date || currentActivity?.start_date_local) {
+      payload.activity_start = currentActivity.start_date || currentActivity.start_date_local;
+    }
 
     const resp = await fetch('/.netlify/functions/whoop-data', {
       method: 'POST',
@@ -1524,9 +1527,17 @@ function renderWhoopData(data) {
   if (!section) return;
 
   const parts = [];
-  const rec = data.recovery;
-  const sl  = data.sleep;
-  const cy  = data.cycle;
+  const rec  = data.recovery;
+  const sl   = data.sleep;
+  const cy   = data.cycle;
+  const psl  = data.post_sleep;
+  const prec = data.post_recovery;
+
+  // Show any API errors so we can debug scope/auth issues
+  if (data._errors) {
+    const errLines = Object.entries(data._errors).map(([k, v]) => `<b>${escapeHtml(k)}</b>: ${escapeHtml(v)}`).join('<br>');
+    parts.push(`<div class="error-banner" style="margin-bottom:10px;font-size:11px;">Whoop API errors (some data unavailable):<br>${errLines}</div>`);
+  }
 
   // ── Night Before: Recovery ────────────────────────────────────────────────
   if (rec) {
@@ -1630,6 +1641,74 @@ function renderWhoopData(data) {
     parts.push(`<div style="margin-bottom:22px;">${whoopSubHead('Today · Strain')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
   }
 
+  // ── Next Night: Sleep (post-activity) ────────────────────────────────────
+  if (psl) {
+    const scored      = psl.score_state === 'SCORED';
+    const asleepMs    = ((psl.in_bed_milli || 0) - (psl.awake_milli || 0));
+    const inBed       = psl.in_bed_milli || 1;
+    const deepPct     = Math.round((psl.deep_milli  || 0) / inBed * 100);
+    const remPct      = Math.round((psl.rem_milli   || 0) / inBed * 100);
+    const lightPct    = Math.round((psl.light_milli || 0) / inBed * 100);
+    const awakePct    = Math.round((psl.awake_milli || 0) / inBed * 100);
+    const sleepWindow = `${fmtClockFromIso(psl.start)} → ${fmtClockFromIso(psl.end)}`;
+
+    const stages = [
+      { name: 'Deep',  pct: deepPct,  ms: psl.deep_milli,  color: '#818cf8' },
+      { name: 'REM',   pct: remPct,   ms: psl.rem_milli,   color: '#60a5fa' },
+      { name: 'Light', pct: lightPct, ms: psl.light_milli, color: '#4ade80' },
+      { name: 'Awake', pct: awakePct, ms: psl.awake_milli, color: '#f87171' }
+    ].filter(s => (s.ms || 0) > 0);
+
+    const topCards = [];
+    if (psl.in_bed_milli != null) topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(psl.in_bed_milli)}</div><div class="metric-lbl">Time in bed</div></div>`);
+    if (asleepMs > 0)             topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(asleepMs)}</div><div class="metric-lbl">Time asleep</div></div>`);
+    if (psl.needed_milli != null) topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(psl.needed_milli)}</div><div class="metric-lbl">Sleep needed</div></div>`);
+    if (psl.performance  != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.performance}%</div><div class="metric-lbl">Performance</div></div>`);
+    if (psl.efficiency   != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.efficiency}%</div><div class="metric-lbl">Efficiency</div></div>`);
+    if (psl.consistency  != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.consistency}%</div><div class="metric-lbl">Consistency</div></div>`);
+    if (psl.respiratory_rate != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.respiratory_rate.toFixed(1)}</div><div class="metric-lbl">Resp rate (br/m)</div></div>`);
+    if (psl.disturbances != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.disturbances}</div><div class="metric-lbl">Disturbances</div></div>`);
+    if (psl.cycles       != null) topCards.push(`<div class="metric"><div class="metric-val">${psl.cycles}</div><div class="metric-lbl">Sleep cycles</div></div>`);
+
+    const stageHtml = stages.length ? `
+      <div class="chart-box" style="padding:12px 16px;margin-top:14px;">
+        ${stages.map(s => `
+          <div class="zone-row">
+            <span class="zone-name" style="color:${s.color};width:44px;">${s.name}</span>
+            <div class="zone-track"><div class="zone-fill" style="width:${s.pct}%;background:${s.color};"></div></div>
+            <span class="zone-pct">${s.pct}%</span>
+            <span class="zone-time">${fmtMs(s.ms)}</span>
+          </div>`).join('')}
+      </div>` : '';
+
+    const unscored = !scored ? `<div class="error-banner" style="margin-bottom:10px;font-size:11px;">Sleep ${psl.score_state || 'not yet scored'} — detailed metrics unavailable</div>` : '';
+
+    parts.push(`
+      <div style="margin-bottom:22px;">
+        ${whoopSubHead(`Next Night · Sleep &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">${sleepWindow}</span>`)}
+        ${unscored}
+        ${topCards.length ? `<div class="metrics-grid" style="margin-bottom:0;">${topCards.join('')}</div>` : ''}
+        ${stageHtml}
+      </div>`);
+  }
+
+  // ── Next Morning: Recovery (post-activity) ────────────────────────────────
+  if (prec) {
+    const score = prec.score;
+    const rc = score >= 67 ? 'var(--green)' : score >= 34 ? 'var(--amber)' : 'var(--red)';
+    const cards = [];
+    if (score != null) {
+      cards.push(`<div class="metric" style="border-color:${rc}33;background:${rc}18;"><div class="metric-val" style="color:${rc};">${score}%</div><div class="metric-lbl">Recovery · ${prec.state}</div></div>`);
+    } else {
+      cards.push(`<div class="metric"><div class="metric-val">--</div><div class="metric-lbl">Recovery · ${prec.state || 'N/A'}</div></div>`);
+    }
+    if (prec.hrv_rmssd  != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(prec.hrv_rmssd)}</div><div class="metric-lbl">HRV (ms)</div></div>`);
+    if (prec.resting_hr != null) cards.push(`<div class="metric"><div class="metric-val">${prec.resting_hr}</div><div class="metric-lbl">Resting HR</div></div>`);
+    if (prec.spo2       != null) cards.push(`<div class="metric"><div class="metric-val">${prec.spo2.toFixed(1)}%</div><div class="metric-lbl">SpO2</div></div>`);
+    if (prec.skin_temp  != null) cards.push(`<div class="metric"><div class="metric-val">${prec.skin_temp.toFixed(1)}°C</div><div class="metric-lbl">Skin temp</div></div>`);
+    parts.push(`<div style="margin-bottom:22px;">${whoopSubHead('Next Morning · Recovery')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
+  }
+
   // ── Body measurements ─────────────────────────────────────────────────────
   const bm = data.body;
   if (bm && (bm.max_heart_rate || bm.weight_kilogram || bm.height_meter)) {
@@ -1647,9 +1726,11 @@ function renderWhoopData(data) {
 
 function formatWhoopForClipboard(d) {
   const lines = ['\n\nWHOOP HEALTH'];
-  const rec = d.recovery;
-  const sl  = d.sleep;
-  const cy  = d.cycle;
+  const rec  = d.recovery;
+  const sl   = d.sleep;
+  const cy   = d.cycle;
+  const psl  = d.post_sleep;
+  const prec = d.post_recovery;
 
   if (rec) {
     lines.push('\nNIGHT BEFORE — RECOVERY');
@@ -1689,11 +1770,48 @@ function formatWhoopForClipboard(d) {
   }
 
   if (cy) {
-    lines.push('\nTODAY — STRAIN');
+    lines.push('\nACTIVITY DAY — STRAIN');
     if (cy.strain  != null) lines.push(`Day strain:         ${cy.strain.toFixed(1)}`);
     if (cy.avg_hr  != null) lines.push(`Avg HR (day):       ${Math.round(cy.avg_hr)} bpm`);
     if (cy.max_hr  != null) lines.push(`Max HR (day):       ${Math.round(cy.max_hr)} bpm`);
     if (cy.kilojoule)       lines.push(`Calories:           ${Math.round(cy.kilojoule / 4.184)} kcal`);
+  }
+
+  if (psl) {
+    const asleepMs = (psl.in_bed_milli || 0) - (psl.awake_milli || 0);
+    lines.push('\nNEXT NIGHT — SLEEP (post-activity recovery)');
+    lines.push(`Sleep window:       ${fmtClockFromIso(psl.start)} → ${fmtClockFromIso(psl.end)}`);
+    lines.push(`Score state:        ${psl.score_state || 'unknown'}`);
+    if (psl.in_bed_milli != null) lines.push(`Time in bed:        ${fmtMs(psl.in_bed_milli)}`);
+    if (asleepMs > 0)             lines.push(`Time asleep:        ${fmtMs(asleepMs)}`);
+    if (psl.needed_milli != null) {
+      lines.push(`Sleep needed:       ${fmtMs(psl.needed_milli)}`);
+      if (psl.needed_baseline != null) lines.push(`  Baseline:         ${fmtMs(psl.needed_baseline)}`);
+      if (psl.needed_strain != null && psl.needed_strain !== 0) lines.push(`  + Strain:         ${psl.needed_strain > 0 ? '+' : ''}${fmtMs(Math.abs(psl.needed_strain))}`);
+      if (psl.needed_debt   != null && psl.needed_debt   !== 0) lines.push(`  + Debt:           ${psl.needed_debt > 0 ? '+' : ''}${fmtMs(Math.abs(psl.needed_debt))}`);
+      if (psl.needed_nap    != null && psl.needed_nap    !== 0) lines.push(`  + Nap credit:     ${psl.needed_nap > 0 ? '+' : '-'}${fmtMs(Math.abs(psl.needed_nap))}`);
+    }
+    if (psl.performance  != null) lines.push(`Performance:        ${psl.performance}%`);
+    if (psl.efficiency   != null) lines.push(`Efficiency:         ${psl.efficiency}%`);
+    if (psl.consistency  != null) lines.push(`Consistency:        ${psl.consistency}%`);
+    if (psl.respiratory_rate != null) lines.push(`Respiratory rate:   ${psl.respiratory_rate.toFixed(1)} br/min`);
+    if (psl.disturbances != null) lines.push(`Disturbances:       ${psl.disturbances}`);
+    if (psl.cycles       != null) lines.push(`Sleep cycles:       ${psl.cycles}`);
+    const inBed = psl.in_bed_milli || 1;
+    if (psl.deep_milli  > 0) lines.push(`Deep (SWS):         ${Math.round(psl.deep_milli  / inBed * 100)}% · ${fmtMs(psl.deep_milli)}`);
+    if (psl.rem_milli   > 0) lines.push(`REM:                ${Math.round(psl.rem_milli   / inBed * 100)}% · ${fmtMs(psl.rem_milli)}`);
+    if (psl.light_milli > 0) lines.push(`Light:              ${Math.round(psl.light_milli / inBed * 100)}% · ${fmtMs(psl.light_milli)}`);
+    if (psl.awake_milli > 0) lines.push(`Awake:              ${Math.round(psl.awake_milli / inBed * 100)}% · ${fmtMs(psl.awake_milli)}`);
+  }
+
+  if (prec) {
+    lines.push('\nNEXT MORNING — RECOVERY (post-activity)');
+    if (prec.score != null) lines.push(`Recovery score:     ${prec.score}% (${prec.state})`);
+    else lines.push(`Recovery:           ${prec.state || 'N/A'}`);
+    if (prec.hrv_rmssd  != null) lines.push(`HRV (RMSSD):        ${Math.round(prec.hrv_rmssd)} ms`);
+    if (prec.resting_hr != null) lines.push(`Resting HR:         ${prec.resting_hr} bpm`);
+    if (prec.spo2       != null) lines.push(`SpO2:               ${prec.spo2.toFixed(1)}%`);
+    if (prec.skin_temp  != null) lines.push(`Skin temp:          ${prec.skin_temp.toFixed(1)}°C`);
   }
 
   const bm = d.body;
@@ -1702,6 +1820,11 @@ function formatWhoopForClipboard(d) {
     if (bm.max_heart_rate  != null) lines.push(`Max HR (Whoop):     ${bm.max_heart_rate} bpm`);
     if (bm.weight_kilogram != null) lines.push(`Weight:             ${bm.weight_kilogram.toFixed(1)} kg`);
     if (bm.height_meter    != null) lines.push(`Height:             ${Math.round(bm.height_meter * 100)} cm`);
+  }
+
+  if (d._errors) {
+    lines.push('\nWHOOP API ERRORS (data may be incomplete)');
+    Object.entries(d._errors).forEach(([k, v]) => lines.push(`  ${k}: ${v}`));
   }
 
   return lines.join('\n');
