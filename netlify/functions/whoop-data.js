@@ -1,4 +1,4 @@
-const BASE = 'https://api.prod.whoop.com/developer/v1';
+const BASE = 'https://api.prod.whoop.com/developer/v2';
 
 exports.handler = async (event) => {
   const cors = {
@@ -64,9 +64,9 @@ exports.handler = async (event) => {
 
   const [recoveryRes, sleepRes, cycleRes, bodyRes] = await Promise.all([
     safeGet('recovery', '/recovery?limit=10'),
-    safeGet('sleep',    '/sleep?limit=14'),
+    safeGet('sleep',    '/activity/sleep?limit=14'),
     safeGet('cycle',    '/cycle?limit=3'),
-    safeGet('body',     '/body_measurement')
+    safeGet('body',     '/user/measurement/body')
   ]);
 
   const recoveries = recoveryRes?.records || [];
