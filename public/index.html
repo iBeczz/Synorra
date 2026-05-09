@@ -640,7 +640,7 @@ async function init() {
 
   let whoopPending = false;
   try { whoopPending = !!sessionStorage.getItem('whoop_oauth_pending'); } catch(e) {}
-  const isWhoopCallback = state === 'whoop' || whoopPending;
+  const isWhoopCallback = (state && state.startsWith('whoopauth_')) || whoopPending;
 
   if (isWhoopCallback) {
     try { sessionStorage.removeItem('whoop_oauth_pending'); } catch(e) {}
@@ -1380,14 +1380,15 @@ function updateWhoopBtn() {
 
 function connectWhoop() {
   const scope = 'offline read:recovery read:sleep read:cycles';
+  const nonce = Math.random().toString(36).slice(2, 10);
+  const state = `whoopauth_${nonce}`;
   const params = new URLSearchParams({
     client_id: WHOOP_CLIENT_ID,
     redirect_uri: WHOOP_REDIRECT_URI,
     response_type: 'code',
     scope,
-    state: 'whoop'
+    state
   });
-  // Set a sessionStorage flag so we recognise the callback even if Whoop omits state
   try { sessionStorage.setItem('whoop_oauth_pending', '1'); } catch(e) {}
   window.location.href = `https://api.prod.whoop.com/oauth/oauth2/auth?${params.toString()}`;
 }
