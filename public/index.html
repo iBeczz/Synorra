@@ -636,36 +636,78 @@ const splitHighlightPlugin = {
     if (chartSplitActiveKm == null) return;
     const { ctx, chartArea } = chart;
     const labels = chart.data.labels;
-    const startKm = chartSplitActiveKm - 1;
-    const endKm   = chartSplitActiveKm;
     const meta = chart.getDatasetMeta(0);
     if (!meta.data.length) return;
     let si = 0, ei = meta.data.length - 1;
+    const startKm = chartSplitActiveKm - 1, endKm = chartSplitActiveKm;
     for (let i = 0; i < labels.length; i++) {
       if (parseFloat(labels[i]) <= startKm) si = i;
       if (parseFloat(labels[i]) <= endKm)   ei = i;
     }
     const x0 = meta.data[si]?.x ?? chartArea.left;
     const x1 = meta.data[ei]?.x ?? chartArea.right;
+    const fade = 36;
+    const bg = 'rgba(8,10,14,0.68)';
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    if (x0 > chartArea.left) ctx.fillRect(chartArea.left, chartArea.top, x0 - chartArea.left, chartArea.height);
-    if (x1 < chartArea.right) ctx.fillRect(x1, chartArea.top, chartArea.right - x1, chartArea.height);
+
+    // Left dim — solid then gradient fade into active zone
+    if (x0 > chartArea.left) {
+      const solidEnd = Math.max(chartArea.left, x0 - fade);
+      ctx.fillStyle = bg;
+      ctx.fillRect(chartArea.left, chartArea.top, solidEnd - chartArea.left, chartArea.height);
+      const gL = ctx.createLinearGradient(solidEnd, 0, x0, 0);
+      gL.addColorStop(0, bg); gL.addColorStop(1, 'rgba(8,10,14,0)');
+      ctx.fillStyle = gL;
+      ctx.fillRect(solidEnd, chartArea.top, x0 - solidEnd, chartArea.height);
+    }
+    // Right dim — gradient fade then solid
+    if (x1 < chartArea.right) {
+      const solidStart = Math.min(chartArea.right, x1 + fade);
+      const gR = ctx.createLinearGradient(x1, 0, solidStart, 0);
+      gR.addColorStop(0, 'rgba(8,10,14,0)'); gR.addColorStop(1, bg);
+      ctx.fillStyle = gR;
+      ctx.fillRect(x1, chartArea.top, solidStart - x1, chartArea.height);
+      ctx.fillStyle = bg;
+      ctx.fillRect(solidStart, chartArea.top, chartArea.right - solidStart, chartArea.height);
+    }
+
+    // Subtle orange boundary lines
+    ctx.strokeStyle = 'rgba(252,76,2,0.55)';
+    ctx.lineWidth = 1; ctx.setLineDash([]);
+    if (x0 > chartArea.left) { ctx.beginPath(); ctx.moveTo(x0, chartArea.top); ctx.lineTo(x0, chartArea.bottom); ctx.stroke(); }
+    if (x1 < chartArea.right) { ctx.beginPath(); ctx.moveTo(x1, chartArea.top); ctx.lineTo(x1, chartArea.bottom); ctx.stroke(); }
+
+    // KM label centred in the spotlight
+    const midX = (x0 + x1) / 2;
+    if (midX > chartArea.left && midX < chartArea.right) {
+      ctx.font = '600 10px "DM Mono", monospace';
+      ctx.fillStyle = 'rgba(252,76,2,0.85)';
+      ctx.textAlign = 'center';
+      ctx.fillText(`KM ${chartSplitActiveKm}`, midX, chartArea.top + 16);
+    }
     ctx.restore();
   }
 };
 
+// crosshairX is set via afterEvent so it's always current when afterDraw fires
+let crosshairX = null;
 const crosshairPlugin = {
   id: 'crosshair',
-  afterDatasetsDraw(chart) {
-    if (!chart._hoverX) return;
+  afterEvent(chart, args) {
+    const e = args.event;
+    if (e.type === 'mousemove') { crosshairX = e.x; args.changed = true; }
+    else if (e.type === 'mouseout') { crosshairX = null; args.changed = true; }
+  },
+  afterDraw(chart) {
+    if (crosshairX == null) return;
     const { ctx, chartArea } = chart;
+    if (crosshairX < chartArea.left || crosshairX > chartArea.right) return;
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(chart._hoverX, chartArea.top);
-    ctx.lineTo(chart._hoverX, chartArea.bottom);
+    ctx.moveTo(crosshairX, chartArea.top);
+    ctx.lineTo(crosshairX, chartArea.bottom);
     ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.setLineDash([4, 3]);
     ctx.stroke();
     ctx.restore();
@@ -1201,24 +1243,43 @@ function rebuildChart() {
           enabled: false,
           external(context) {
             const { chart, tooltip } = context;
-            let el = chart.canvas.parentNode.querySelector('.chart-ext-tooltip');
+            const wrap = chart.canvas.parentNode;
+            let el = wrap.querySelector('.chart-ext-tooltip');
             if (!el) {
-              el = document.createElement('div'); el.className = 'chart-ext-tooltip';
-              chart.canvas.parentNode.style.position = 'relative';
-              chart.canvas.parentNode.appendChild(el);
+              el = document.createElement('div');
+              el.className = 'chart-ext-tooltip';
+              wrap.style.position = 'relative';
+              wrap.appendChild(el);
             }
-            if (tooltip.opacity === 0) { el.style.opacity = '0'; chart._hoverX = null; chart.update('none'); return; }
-            chart._hoverX = tooltip.caretX; chart.update('none');
-            const title = tooltip.title?.[0] ? `<div style="color:#888580;margin-bottom:5px;">${tooltip.title[0]} km</div>` : '';
-            const lines = (tooltip.dataPoints||[]).map(dp => {
+            if (tooltip.opacity === 0) { el.style.opacity = '0'; return; }
+
+            // Elapsed time at this chart index
+            const chartIdx = tooltip.dataPoints?.[0]?.dataIndex ?? -1;
+            const N = streamData?.time?.data?.length || 0;
+            const step = Math.max(1, Math.floor(N / 400));
+            const rawIdx = chartIdx >= 0 ? Math.min(N - 1, chartIdx * step) : -1;
+            const elapsedSecs = rawIdx >= 0 ? (streamData?.time?.data?.[rawIdx] ?? null) : null;
+            const elapsedStr = elapsedSecs != null ? fmtTime(elapsedSecs) : null;
+
+            const distLabel = tooltip.title?.[0] || '--';
+            const header = `<div style="color:#888580;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:5px;">${distLabel} km${elapsedStr ? ` · ${elapsedStr}` : ''}</div>`;
+            const lines = (tooltip.dataPoints || []).map(dp => {
               const v = dp.parsed.y; if (v == null) return '';
-              const ds = dp.dataset; const unit = ds._unit||'';
-              if (ds._reversed && unit==='/km') { const m=Math.floor(v),s=Math.round((v-m)*60); return `<div style="color:${ds.borderColor}">${ds.label}: ${m}:${String(s).padStart(2,'0')} /km</div>`; }
-              return `<div style="color:${ds.borderColor}">${ds.label}: ${v.toFixed(1)} ${unit}</div>`;
-            }).join('');
-            el.innerHTML = title+lines; el.style.opacity='1';
-            const x = tooltip.caretX+14, maxL = chart.canvas.parentNode.offsetWidth - el.offsetWidth - 8;
-            el.style.left = Math.min(x, maxL)+'px';
+              const ds = dp.dataset; const unit = ds._unit || '';
+              if (ds._reversed && unit === '/km') {
+                const m = Math.floor(v), s = Math.round((v - m) * 60);
+                return `<div style="color:${ds.borderColor};margin-top:3px;">${ds.label}: ${m}:${String(s).padStart(2,'0')} /km</div>`;
+              }
+              return `<div style="color:${ds.borderColor};margin-top:3px;">${ds.label}: ${v.toFixed(1)} ${unit}</div>`;
+            }).filter(Boolean).join('');
+
+            el.innerHTML = header + lines;
+            el.style.opacity = '1';
+
+            // Fixed y (top of chart), x follows cursor clamped to stay in view
+            const x = tooltip.caretX + 14;
+            const maxL = wrap.offsetWidth - el.offsetWidth - 8;
+            el.style.left = Math.min(Math.max(8, x), Math.max(8, maxL)) + 'px';
           }
         },
         crosshair: {},
