@@ -577,6 +577,17 @@ function fmtClockEnd(isoStr, elapsedSecs) {
   return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`;
 }
 function avg(arr) { return arr.length ? arr.reduce((s,v)=>s+v,0)/arr.length : 0; }
+function fmtMs(ms) {
+  if (ms == null || isNaN(ms) || ms <= 0) return '--';
+  const totalMins = Math.round(ms / 60000);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return h > 0 ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m`;
+}
+function fmtClockFromIso(iso) {
+  if (!iso) return '--';
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
 function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -1468,10 +1479,13 @@ async function fetchWhoopData() {
   if (!tok || !section) return;
 
   try {
+    const payload = { ...tok };
+    if (currentActivity?.start_date_local) payload.activity_start = currentActivity.start_date_local;
+
     const resp = await fetch('/.netlify/functions/whoop-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(tok)
+      body: JSON.stringify(payload)
     });
     const data = await resp.json();
 
@@ -1501,76 +1515,150 @@ async function fetchWhoopData() {
   }
 }
 
+function whoopSubHead(label) {
+  return `<div style="font-size:10px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:var(--whoop);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">${label}</div>`;
+}
+
 function renderWhoopData(data) {
   const section = document.getElementById('whoop-section');
   if (!section) return;
 
-  const score = data.recovery_score;
-  const recoveryColor = score >= 67 ? 'var(--green)' : score >= 34 ? 'var(--amber)' : 'var(--red)';
-  const strain = data.day_strain;
-  const strainColor = strain >= 18 ? 'var(--red)' : strain >= 10 ? 'var(--amber)' : 'var(--green)';
+  const parts = [];
+  const rec = data.recovery;
+  const sl  = data.sleep;
+  const cy  = data.cycle;
 
-  const cards = [];
+  // ── Night Before: Recovery ────────────────────────────────────────────────
+  if (rec) {
+    const score = rec.score;
+    const rc = score >= 67 ? 'var(--green)' : score >= 34 ? 'var(--amber)' : 'var(--red)';
+    const cards = [];
 
-  if (score != null) {
-    cards.push(`
-      <div class="metric" style="border-color:${recoveryColor}33;background:${recoveryColor}18;">
-        <div class="metric-val" style="color:${recoveryColor};">${score}%</div>
-        <div class="metric-lbl">Recovery · ${data.recovery_state || ''}</div>
-      </div>`);
-  } else {
-    cards.push(`
-      <div class="metric">
-        <div class="metric-val" style="font-size:14px;">--</div>
-        <div class="metric-lbl">Recovery · ${data.recovery_state || 'Unknown'}</div>
-      </div>`);
+    if (score != null) {
+      cards.push(`<div class="metric" style="border-color:${rc}33;background:${rc}18;"><div class="metric-val" style="color:${rc};">${score}%</div><div class="metric-lbl">Recovery · ${rec.state}</div></div>`);
+    } else {
+      cards.push(`<div class="metric"><div class="metric-val">--</div><div class="metric-lbl">Recovery · ${rec.state || 'N/A'}</div></div>`);
+    }
+    if (rec.hrv_rmssd  != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(rec.hrv_rmssd)}</div><div class="metric-lbl">HRV (ms)</div></div>`);
+    if (rec.resting_hr != null) cards.push(`<div class="metric"><div class="metric-val">${rec.resting_hr}</div><div class="metric-lbl">Resting HR</div></div>`);
+    if (rec.spo2       != null) cards.push(`<div class="metric"><div class="metric-val">${rec.spo2.toFixed(1)}%</div><div class="metric-lbl">SpO2</div></div>`);
+    if (rec.skin_temp  != null) cards.push(`<div class="metric"><div class="metric-val">${rec.skin_temp.toFixed(1)}°C</div><div class="metric-lbl">Skin temp</div></div>`);
+
+    parts.push(`<div style="margin-bottom:22px;">${whoopSubHead('Night Before · Recovery')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
   }
 
-  if (data.hrv_rmssd != null) cards.push(`
-    <div class="metric">
-      <div class="metric-val">${Math.round(data.hrv_rmssd)}</div>
-      <div class="metric-lbl">HRV (ms)</div>
-    </div>`);
+  // ── Night Before: Sleep ───────────────────────────────────────────────────
+  if (sl && sl.in_bed_milli != null) {
+    const asleepMs = (sl.in_bed_milli || 0) - (sl.awake_milli || 0);
+    const inBed    = sl.in_bed_milli || 1;
+    const deepPct  = Math.round((sl.deep_milli  || 0) / inBed * 100);
+    const remPct   = Math.round((sl.rem_milli   || 0) / inBed * 100);
+    const lightPct = Math.round((sl.light_milli || 0) / inBed * 100);
+    const awakePct = Math.round((sl.awake_milli || 0) / inBed * 100);
+    const sleepWindow = `${fmtClockFromIso(sl.start)} → ${fmtClockFromIso(sl.end)}`;
 
-  if (data.resting_hr != null) cards.push(`
-    <div class="metric">
-      <div class="metric-val">${data.resting_hr}</div>
-      <div class="metric-lbl">Resting HR</div>
-    </div>`);
+    const stages = [
+      { name: 'Deep',  pct: deepPct,  ms: sl.deep_milli,  color: '#818cf8' },
+      { name: 'REM',   pct: remPct,   ms: sl.rem_milli,   color: '#60a5fa' },
+      { name: 'Light', pct: lightPct, ms: sl.light_milli, color: '#4ade80' },
+      { name: 'Awake', pct: awakePct, ms: sl.awake_milli, color: '#f87171' }
+    ].filter(s => s.ms > 0);
 
-  if (data.sleep_performance != null) cards.push(`
-    <div class="metric">
-      <div class="metric-val">${data.sleep_performance}%</div>
-      <div class="metric-lbl">Sleep perf</div>
-    </div>`);
+    const topCards = [
+      `<div class="metric"><div class="metric-val">${fmtMs(sl.in_bed_milli)}</div><div class="metric-lbl">Time in bed</div></div>`,
+      `<div class="metric"><div class="metric-val">${fmtMs(asleepMs)}</div><div class="metric-lbl">Time asleep</div></div>`
+    ];
+    if (sl.needed_milli != null) topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(sl.needed_milli)}</div><div class="metric-lbl">Sleep needed</div></div>`);
+    if (sl.performance  != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.performance}%</div><div class="metric-lbl">Performance</div></div>`);
+    if (sl.efficiency   != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.efficiency}%</div><div class="metric-lbl">Efficiency</div></div>`);
+    if (sl.consistency  != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.consistency}%</div><div class="metric-lbl">Consistency</div></div>`);
+    if (sl.respiratory_rate != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.respiratory_rate.toFixed(1)}</div><div class="metric-lbl">Resp rate (br/m)</div></div>`);
+    if (sl.disturbances != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.disturbances}</div><div class="metric-lbl">Disturbances</div></div>`);
+    if (sl.cycles       != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.cycles}</div><div class="metric-lbl">Sleep cycles</div></div>`);
 
-  if (data.sleep_duration_h != null) cards.push(`
-    <div class="metric">
-      <div class="metric-val">${data.sleep_duration_h}h ${String(data.sleep_duration_m).padStart(2,'0')}m</div>
-      <div class="metric-lbl">Sleep duration</div>
-    </div>`);
+    const stageHtml = stages.length ? `
+      <div class="chart-box" style="padding:12px 16px;margin-top:14px;">
+        ${stages.map(s => `
+          <div class="zone-row">
+            <span class="zone-name" style="color:${s.color};width:44px;">${s.name}</span>
+            <div class="zone-track"><div class="zone-fill" style="width:${s.pct}%;background:${s.color};"></div></div>
+            <span class="zone-pct">${s.pct}%</span>
+            <span class="zone-time">${fmtMs(s.ms)}</span>
+          </div>`).join('')}
+      </div>` : '';
 
-  if (strain != null) cards.push(`
-    <div class="metric" style="border-color:${strainColor}33;background:${strainColor}18;">
-      <div class="metric-val" style="color:${strainColor};">${strain.toFixed(1)}</div>
-      <div class="metric-lbl">Day strain</div>
-    </div>`);
+    parts.push(`
+      <div style="margin-bottom:22px;">
+        ${whoopSubHead(`Night Before · Sleep &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">${sleepWindow}</span>`)}
+        <div class="metrics-grid" style="margin-bottom:0;">${topCards.join('')}</div>
+        ${stageHtml}
+      </div>`);
+  } else if (sl) {
+    parts.push(`<div style="margin-bottom:16px;">${whoopSubHead('Night Before · Sleep')}<div style="font-size:12px;color:var(--faint);">Sleep data ${sl.state || 'unavailable'}</div></div>`);
+  }
 
-  section.innerHTML = `
-    <div class="section-head">Whoop Recovery</div>
-    <div class="metrics-grid" style="margin-bottom:10px;">${cards.join('')}</div>
-    <button onclick="whoopData=null;renderWhoopSection();" style="background:none;border:1px solid var(--border);color:var(--faint);padding:5px 12px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer;" onmouseover="this.style.borderColor='var(--whoop)';this.style.color='var(--whoop)';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--faint)';">Refresh</button>`;
+  // ── Today: Strain + Day HR ────────────────────────────────────────────────
+  if (cy) {
+    const sc = cy.strain;
+    const scc = sc >= 18 ? 'var(--red)' : sc >= 10 ? 'var(--amber)' : 'var(--green)';
+    const kcal = cy.kilojoule ? Math.round(cy.kilojoule / 4.184) : null;
+    const cards = [];
+    if (sc      != null) cards.push(`<div class="metric" style="border-color:${scc}33;background:${scc}18;"><div class="metric-val" style="color:${scc};">${sc.toFixed(1)}</div><div class="metric-lbl">Day strain</div></div>`);
+    if (cy.avg_hr != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(cy.avg_hr)}</div><div class="metric-lbl">Avg HR (day)</div></div>`);
+    if (cy.max_hr != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(cy.max_hr)}</div><div class="metric-lbl">Max HR (day)</div></div>`);
+    if (kcal)              cards.push(`<div class="metric"><div class="metric-val">${kcal}</div><div class="metric-lbl">Calories (kcal)</div></div>`);
+    parts.push(`<div style="margin-bottom:14px;">${whoopSubHead('Today · Strain')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
+  }
+
+  const refreshBtn = `<button onclick="whoopData=null;renderWhoopSection();" style="background:none;border:1px solid var(--border);color:var(--faint);padding:5px 12px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer;" onmouseover="this.style.borderColor='var(--whoop)';this.style.color='var(--whoop)';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--faint)';">Refresh</button>`;
+
+  section.innerHTML = `<div class="section-head">Whoop Health</div>${parts.join('')}${refreshBtn}`;
 }
 
 function formatWhoopForClipboard(d) {
-  const lines = ['\n\nWHOOP RECOVERY'];
-  if (d.recovery_score != null) lines.push(`Recovery score:     ${d.recovery_score}% (${d.recovery_state})`);
-  else lines.push(`Recovery:           ${d.recovery_state || 'N/A'}`);
-  if (d.hrv_rmssd != null)        lines.push(`HRV (RMSSD):        ${Math.round(d.hrv_rmssd)} ms`);
-  if (d.resting_hr != null)       lines.push(`Resting HR:         ${d.resting_hr} bpm`);
-  if (d.sleep_performance != null) lines.push(`Sleep performance:  ${d.sleep_performance}%`);
-  if (d.sleep_duration_h != null)  lines.push(`Sleep duration:     ${d.sleep_duration_h}h ${String(d.sleep_duration_m).padStart(2,'0')}m`);
-  if (d.day_strain != null)        lines.push(`Day strain:         ${d.day_strain.toFixed(1)}`);
+  const lines = ['\n\nWHOOP HEALTH'];
+  const rec = d.recovery;
+  const sl  = d.sleep;
+  const cy  = d.cycle;
+
+  if (rec) {
+    lines.push('\nNIGHT BEFORE — RECOVERY');
+    if (rec.score != null) lines.push(`Recovery score:     ${rec.score}% (${rec.state})`);
+    else lines.push(`Recovery:           ${rec.state || 'N/A'}`);
+    if (rec.hrv_rmssd  != null) lines.push(`HRV (RMSSD):        ${Math.round(rec.hrv_rmssd)} ms`);
+    if (rec.resting_hr != null) lines.push(`Resting HR:         ${rec.resting_hr} bpm`);
+    if (rec.spo2       != null) lines.push(`SpO2:               ${rec.spo2.toFixed(1)}%`);
+    if (rec.skin_temp  != null) lines.push(`Skin temp:          ${rec.skin_temp.toFixed(1)}°C`);
+  }
+
+  if (sl && sl.in_bed_milli != null) {
+    const asleepMs = (sl.in_bed_milli || 0) - (sl.awake_milli || 0);
+    lines.push('\nNIGHT BEFORE — SLEEP');
+    lines.push(`Sleep window:       ${fmtClockFromIso(sl.start)} → ${fmtClockFromIso(sl.end)}`);
+    lines.push(`Time in bed:        ${fmtMs(sl.in_bed_milli)}`);
+    lines.push(`Time asleep:        ${fmtMs(asleepMs)}`);
+    if (sl.needed_milli != null) lines.push(`Sleep needed:       ${fmtMs(sl.needed_milli)}`);
+    if (sl.performance  != null) lines.push(`Performance:        ${sl.performance}%`);
+    if (sl.efficiency   != null) lines.push(`Efficiency:         ${sl.efficiency}%`);
+    if (sl.consistency  != null) lines.push(`Consistency:        ${sl.consistency}%`);
+    if (sl.respiratory_rate != null) lines.push(`Respiratory rate:   ${sl.respiratory_rate.toFixed(1)} br/min`);
+    if (sl.disturbances != null) lines.push(`Disturbances:       ${sl.disturbances}`);
+    if (sl.cycles       != null) lines.push(`Sleep cycles:       ${sl.cycles}`);
+    lines.push('Sleep stages:');
+    if (sl.deep_milli  > 0) lines.push(`  Deep (SWS):       ${Math.round((sl.deep_milli  / sl.in_bed_milli) * 100)}% · ${fmtMs(sl.deep_milli)}`);
+    if (sl.rem_milli   > 0) lines.push(`  REM:              ${Math.round((sl.rem_milli   / sl.in_bed_milli) * 100)}% · ${fmtMs(sl.rem_milli)}`);
+    if (sl.light_milli > 0) lines.push(`  Light:            ${Math.round((sl.light_milli / sl.in_bed_milli) * 100)}% · ${fmtMs(sl.light_milli)}`);
+    if (sl.awake_milli > 0) lines.push(`  Awake:            ${Math.round((sl.awake_milli / sl.in_bed_milli) * 100)}% · ${fmtMs(sl.awake_milli)}`);
+  }
+
+  if (cy) {
+    lines.push('\nTODAY — STRAIN');
+    if (cy.strain  != null) lines.push(`Day strain:         ${cy.strain.toFixed(1)}`);
+    if (cy.avg_hr  != null) lines.push(`Avg HR (day):       ${Math.round(cy.avg_hr)} bpm`);
+    if (cy.max_hr  != null) lines.push(`Max HR (day):       ${Math.round(cy.max_hr)} bpm`);
+    if (cy.kilojoule) lines.push(`Calories:           ${Math.round(cy.kilojoule / 4.184)} kcal`);
+  }
+
   return lines.join('\n');
 }
 
