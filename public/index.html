@@ -1548,13 +1548,14 @@ function renderWhoopData(data) {
   }
 
   // ── Night Before: Sleep ───────────────────────────────────────────────────
-  if (sl && sl.in_bed_milli != null) {
-    const asleepMs = (sl.in_bed_milli || 0) - (sl.awake_milli || 0);
-    const inBed    = sl.in_bed_milli || 1;
-    const deepPct  = Math.round((sl.deep_milli  || 0) / inBed * 100);
-    const remPct   = Math.round((sl.rem_milli   || 0) / inBed * 100);
-    const lightPct = Math.round((sl.light_milli || 0) / inBed * 100);
-    const awakePct = Math.round((sl.awake_milli || 0) / inBed * 100);
+  if (sl) {
+    const scored      = sl.score_state === 'SCORED';
+    const asleepMs    = ((sl.in_bed_milli || 0) - (sl.awake_milli || 0));
+    const inBed       = sl.in_bed_milli || 1;
+    const deepPct     = Math.round((sl.deep_milli  || 0) / inBed * 100);
+    const remPct      = Math.round((sl.rem_milli   || 0) / inBed * 100);
+    const lightPct    = Math.round((sl.light_milli || 0) / inBed * 100);
+    const awakePct    = Math.round((sl.awake_milli || 0) / inBed * 100);
     const sleepWindow = `${fmtClockFromIso(sl.start)} → ${fmtClockFromIso(sl.end)}`;
 
     const stages = [
@@ -1562,12 +1563,11 @@ function renderWhoopData(data) {
       { name: 'REM',   pct: remPct,   ms: sl.rem_milli,   color: '#60a5fa' },
       { name: 'Light', pct: lightPct, ms: sl.light_milli, color: '#4ade80' },
       { name: 'Awake', pct: awakePct, ms: sl.awake_milli, color: '#f87171' }
-    ].filter(s => s.ms > 0);
+    ].filter(s => (s.ms || 0) > 0);
 
-    const topCards = [
-      `<div class="metric"><div class="metric-val">${fmtMs(sl.in_bed_milli)}</div><div class="metric-lbl">Time in bed</div></div>`,
-      `<div class="metric"><div class="metric-val">${fmtMs(asleepMs)}</div><div class="metric-lbl">Time asleep</div></div>`
-    ];
+    const topCards = [];
+    if (sl.in_bed_milli != null) topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(sl.in_bed_milli)}</div><div class="metric-lbl">Time in bed</div></div>`);
+    if (asleepMs > 0)            topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(asleepMs)}</div><div class="metric-lbl">Time asleep</div></div>`);
     if (sl.needed_milli != null) topCards.push(`<div class="metric"><div class="metric-val">${fmtMs(sl.needed_milli)}</div><div class="metric-lbl">Sleep needed</div></div>`);
     if (sl.performance  != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.performance}%</div><div class="metric-lbl">Performance</div></div>`);
     if (sl.efficiency   != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.efficiency}%</div><div class="metric-lbl">Efficiency</div></div>`);
@@ -1575,6 +1575,24 @@ function renderWhoopData(data) {
     if (sl.respiratory_rate != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.respiratory_rate.toFixed(1)}</div><div class="metric-lbl">Resp rate (br/m)</div></div>`);
     if (sl.disturbances != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.disturbances}</div><div class="metric-lbl">Disturbances</div></div>`);
     if (sl.cycles       != null) topCards.push(`<div class="metric"><div class="metric-val">${sl.cycles}</div><div class="metric-lbl">Sleep cycles</div></div>`);
+
+    // Sleep needed breakdown
+    let neededBreakdown = '';
+    if (sl.needed_milli != null && (sl.needed_baseline || sl.needed_strain || sl.needed_debt)) {
+      const rows = [];
+      if (sl.needed_baseline != null) rows.push(`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>Baseline need</span><span style="font-family:var(--mono);">${fmtMs(sl.needed_baseline)}</span></div>`);
+      if (sl.needed_strain   != null && sl.needed_strain   !== 0) rows.push(`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>+ Recent strain</span><span style="font-family:var(--mono);color:var(--amber);">${sl.needed_strain > 0 ? '+' : ''}${fmtMs(Math.abs(sl.needed_strain))}</span></div>`);
+      if (sl.needed_debt     != null && sl.needed_debt     !== 0) rows.push(`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>+ Sleep debt</span><span style="font-family:var(--mono);color:var(--red);">${sl.needed_debt > 0 ? '+' : ''}${fmtMs(Math.abs(sl.needed_debt))}</span></div>`);
+      if (sl.needed_nap      != null && sl.needed_nap      !== 0) rows.push(`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>+ Nap credit</span><span style="font-family:var(--mono);color:var(--green);">${sl.needed_nap > 0 ? '+' : ''}${fmtMs(Math.abs(sl.needed_nap))}</span></div>`);
+      if (rows.length) {
+        neededBreakdown = `
+          <div style="margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);">
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">Sleep debt breakdown</div>
+            ${rows.join('')}
+            <div style="display:flex;justify-content:space-between;padding:4px 0;font-weight:600;color:var(--text);"><span>Total needed</span><span style="font-family:var(--mono);">${fmtMs(sl.needed_milli)}</span></div>
+          </div>`;
+      }
+    }
 
     const stageHtml = stages.length ? `
       <div class="chart-box" style="padding:12px 16px;margin-top:14px;">
@@ -1587,27 +1605,39 @@ function renderWhoopData(data) {
           </div>`).join('')}
       </div>` : '';
 
+    const unscored = !scored ? `<div class="error-banner" style="margin-bottom:10px;font-size:11px;">Sleep ${sl.score_state || 'not yet scored'} — detailed metrics unavailable</div>` : '';
+
     parts.push(`
       <div style="margin-bottom:22px;">
         ${whoopSubHead(`Night Before · Sleep &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">${sleepWindow}</span>`)}
-        <div class="metrics-grid" style="margin-bottom:0;">${topCards.join('')}</div>
+        ${unscored}
+        ${topCards.length ? `<div class="metrics-grid" style="margin-bottom:0;">${topCards.join('')}</div>` : ''}
+        ${neededBreakdown}
         ${stageHtml}
       </div>`);
-  } else if (sl) {
-    parts.push(`<div style="margin-bottom:16px;">${whoopSubHead('Night Before · Sleep')}<div style="font-size:12px;color:var(--faint);">Sleep data ${sl.state || 'unavailable'}</div></div>`);
   }
 
   // ── Today: Strain + Day HR ────────────────────────────────────────────────
   if (cy) {
-    const sc = cy.strain;
+    const sc  = cy.strain;
     const scc = sc >= 18 ? 'var(--red)' : sc >= 10 ? 'var(--amber)' : 'var(--green)';
     const kcal = cy.kilojoule ? Math.round(cy.kilojoule / 4.184) : null;
     const cards = [];
-    if (sc      != null) cards.push(`<div class="metric" style="border-color:${scc}33;background:${scc}18;"><div class="metric-val" style="color:${scc};">${sc.toFixed(1)}</div><div class="metric-lbl">Day strain</div></div>`);
+    if (sc        != null) cards.push(`<div class="metric" style="border-color:${scc}33;background:${scc}18;"><div class="metric-val" style="color:${scc};">${sc.toFixed(1)}</div><div class="metric-lbl">Day strain</div></div>`);
     if (cy.avg_hr != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(cy.avg_hr)}</div><div class="metric-lbl">Avg HR (day)</div></div>`);
     if (cy.max_hr != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(cy.max_hr)}</div><div class="metric-lbl">Max HR (day)</div></div>`);
-    if (kcal)              cards.push(`<div class="metric"><div class="metric-val">${kcal}</div><div class="metric-lbl">Calories (kcal)</div></div>`);
-    parts.push(`<div style="margin-bottom:14px;">${whoopSubHead('Today · Strain')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
+    if (kcal)               cards.push(`<div class="metric"><div class="metric-val">${kcal}</div><div class="metric-lbl">Calories (kcal)</div></div>`);
+    parts.push(`<div style="margin-bottom:22px;">${whoopSubHead('Today · Strain')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
+  }
+
+  // ── Body measurements ─────────────────────────────────────────────────────
+  const bm = data.body;
+  if (bm && (bm.max_heart_rate || bm.weight_kilogram || bm.height_meter)) {
+    const cards = [];
+    if (bm.max_heart_rate  != null) cards.push(`<div class="metric"><div class="metric-val">${bm.max_heart_rate}</div><div class="metric-lbl">Max HR (Whoop)</div></div>`);
+    if (bm.weight_kilogram != null) cards.push(`<div class="metric"><div class="metric-val">${bm.weight_kilogram.toFixed(1)} kg</div><div class="metric-lbl">Weight</div></div>`);
+    if (bm.height_meter    != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(bm.height_meter * 100)} cm</div><div class="metric-lbl">Height</div></div>`);
+    if (cards.length) parts.push(`<div style="margin-bottom:14px;">${whoopSubHead('Body Measurements')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
   }
 
   const refreshBtn = `<button onclick="whoopData=null;renderWhoopSection();" style="background:none;border:1px solid var(--border);color:var(--faint);padding:5px 12px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer;" onmouseover="this.style.borderColor='var(--whoop)';this.style.color='var(--whoop)';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--faint)';">Refresh</button>`;
@@ -1631,24 +1661,31 @@ function formatWhoopForClipboard(d) {
     if (rec.skin_temp  != null) lines.push(`Skin temp:          ${rec.skin_temp.toFixed(1)}°C`);
   }
 
-  if (sl && sl.in_bed_milli != null) {
+  if (sl) {
     const asleepMs = (sl.in_bed_milli || 0) - (sl.awake_milli || 0);
     lines.push('\nNIGHT BEFORE — SLEEP');
     lines.push(`Sleep window:       ${fmtClockFromIso(sl.start)} → ${fmtClockFromIso(sl.end)}`);
-    lines.push(`Time in bed:        ${fmtMs(sl.in_bed_milli)}`);
-    lines.push(`Time asleep:        ${fmtMs(asleepMs)}`);
-    if (sl.needed_milli != null) lines.push(`Sleep needed:       ${fmtMs(sl.needed_milli)}`);
+    lines.push(`Score state:        ${sl.score_state || 'unknown'}`);
+    if (sl.in_bed_milli != null) lines.push(`Time in bed:        ${fmtMs(sl.in_bed_milli)}`);
+    if (asleepMs > 0)            lines.push(`Time asleep:        ${fmtMs(asleepMs)}`);
+    if (sl.needed_milli != null) {
+      lines.push(`Sleep needed:       ${fmtMs(sl.needed_milli)}`);
+      if (sl.needed_baseline != null) lines.push(`  Baseline:         ${fmtMs(sl.needed_baseline)}`);
+      if (sl.needed_strain   != null && sl.needed_strain !== 0) lines.push(`  + Strain:         ${sl.needed_strain > 0 ? '+' : ''}${fmtMs(Math.abs(sl.needed_strain))}`);
+      if (sl.needed_debt     != null && sl.needed_debt   !== 0) lines.push(`  + Debt:           ${sl.needed_debt > 0 ? '+' : ''}${fmtMs(Math.abs(sl.needed_debt))}`);
+      if (sl.needed_nap      != null && sl.needed_nap    !== 0) lines.push(`  + Nap credit:     ${sl.needed_nap > 0 ? '+' : '-'}${fmtMs(Math.abs(sl.needed_nap))}`);
+    }
     if (sl.performance  != null) lines.push(`Performance:        ${sl.performance}%`);
     if (sl.efficiency   != null) lines.push(`Efficiency:         ${sl.efficiency}%`);
     if (sl.consistency  != null) lines.push(`Consistency:        ${sl.consistency}%`);
     if (sl.respiratory_rate != null) lines.push(`Respiratory rate:   ${sl.respiratory_rate.toFixed(1)} br/min`);
     if (sl.disturbances != null) lines.push(`Disturbances:       ${sl.disturbances}`);
     if (sl.cycles       != null) lines.push(`Sleep cycles:       ${sl.cycles}`);
-    lines.push('Sleep stages:');
-    if (sl.deep_milli  > 0) lines.push(`  Deep (SWS):       ${Math.round((sl.deep_milli  / sl.in_bed_milli) * 100)}% · ${fmtMs(sl.deep_milli)}`);
-    if (sl.rem_milli   > 0) lines.push(`  REM:              ${Math.round((sl.rem_milli   / sl.in_bed_milli) * 100)}% · ${fmtMs(sl.rem_milli)}`);
-    if (sl.light_milli > 0) lines.push(`  Light:            ${Math.round((sl.light_milli / sl.in_bed_milli) * 100)}% · ${fmtMs(sl.light_milli)}`);
-    if (sl.awake_milli > 0) lines.push(`  Awake:            ${Math.round((sl.awake_milli / sl.in_bed_milli) * 100)}% · ${fmtMs(sl.awake_milli)}`);
+    const inBed = sl.in_bed_milli || 1;
+    if (sl.deep_milli  > 0) lines.push(`Deep (SWS):         ${Math.round(sl.deep_milli  / inBed * 100)}% · ${fmtMs(sl.deep_milli)}`);
+    if (sl.rem_milli   > 0) lines.push(`REM:                ${Math.round(sl.rem_milli   / inBed * 100)}% · ${fmtMs(sl.rem_milli)}`);
+    if (sl.light_milli > 0) lines.push(`Light:              ${Math.round(sl.light_milli / inBed * 100)}% · ${fmtMs(sl.light_milli)}`);
+    if (sl.awake_milli > 0) lines.push(`Awake:              ${Math.round(sl.awake_milli / inBed * 100)}% · ${fmtMs(sl.awake_milli)}`);
   }
 
   if (cy) {
@@ -1656,7 +1693,15 @@ function formatWhoopForClipboard(d) {
     if (cy.strain  != null) lines.push(`Day strain:         ${cy.strain.toFixed(1)}`);
     if (cy.avg_hr  != null) lines.push(`Avg HR (day):       ${Math.round(cy.avg_hr)} bpm`);
     if (cy.max_hr  != null) lines.push(`Max HR (day):       ${Math.round(cy.max_hr)} bpm`);
-    if (cy.kilojoule) lines.push(`Calories:           ${Math.round(cy.kilojoule / 4.184)} kcal`);
+    if (cy.kilojoule)       lines.push(`Calories:           ${Math.round(cy.kilojoule / 4.184)} kcal`);
+  }
+
+  const bm = d.body;
+  if (bm) {
+    lines.push('\nBODY MEASUREMENTS');
+    if (bm.max_heart_rate  != null) lines.push(`Max HR (Whoop):     ${bm.max_heart_rate} bpm`);
+    if (bm.weight_kilogram != null) lines.push(`Weight:             ${bm.weight_kilogram.toFixed(1)} kg`);
+    if (bm.height_meter    != null) lines.push(`Height:             ${Math.round(bm.height_meter * 100)} cm`);
   }
 
   return lines.join('\n');
