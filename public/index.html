@@ -638,13 +638,29 @@ async function init() {
   const state = params.get('state');
   const stored = getToken();
 
-  if (code && state === 'whoop') {
+  let whoopPending = false;
+  try { whoopPending = !!sessionStorage.getItem('whoop_oauth_pending'); } catch(e) {}
+  const isWhoopCallback = state === 'whoop' || whoopPending;
+
+  if (isWhoopCallback) {
+    try { sessionStorage.removeItem('whoop_oauth_pending'); } catch(e) {}
     window.history.replaceState({}, '', window.location.pathname);
+
     if (!stored) {
       document.getElementById('auth-error').innerHTML = '<div class="error-banner" style="margin-top:20px;">Connect Strava first, then connect Whoop.</div>';
       return;
     }
     token = stored;
+
+    // Whoop may return ?error= instead of ?code= (e.g. user denied, bad config)
+    if (!code) {
+      const whoopErr = params.get('error_description') || params.get('error') || 'Whoop did not return an authorization code — check your Whoop app redirect URI matches exactly: ' + WHOOP_REDIRECT_URI;
+      whoopConnectError = whoopErr;
+      await showApp(null);
+      showWhoopError(whoopConnectError);
+      return;
+    }
+
     try {
       const whoopTok = await exchangeWhoopCode(code);
       saveWhoopToken(whoopTok);
@@ -652,9 +668,7 @@ async function init() {
       whoopConnectError = e.message;
     }
     await showApp(null);
-    if (whoopConnectError) {
-      showWhoopError(whoopConnectError);
-    }
+    if (whoopConnectError) showWhoopError(whoopConnectError);
     return;
   }
 
@@ -679,7 +693,7 @@ async function showApp(athlete) {
   document.getElementById('main-panel').style.display = 'block';
 
   const copyBtn = document.getElementById('copy-btn');
-  const whoopHtml = `<button class="btn-whoop" id="whoop-btn">
+  const whoopHtml = `<button class="btn-whoop" id="whoop-btn" onclick="connectWhoop()">
     <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path fill="none" stroke="white" stroke-width="2.5" d="M7 12l4 4 6-7"/></svg>
     Connect Whoop
   </button>`;
@@ -1356,11 +1370,11 @@ function updateWhoopBtn() {
   if (tok) {
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px;"><circle cx="12" cy="12" r="10"/><path fill="none" stroke="white" stroke-width="2.5" d="M7 12l4 4 6-7"/></svg> Whoop Connected`;
     btn.classList.add('connected');
-    btn.onclick = promptWhoopDisconnect;
+    btn.setAttribute('onclick', 'promptWhoopDisconnect()');
   } else {
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px;"><circle cx="12" cy="12" r="10"/><path fill="none" stroke="white" stroke-width="2.5" d="M7 12l4 4 6-7"/></svg> Connect Whoop`;
     btn.classList.remove('connected');
-    btn.onclick = connectWhoop;
+    btn.setAttribute('onclick', 'connectWhoop()');
   }
 }
 
@@ -1373,6 +1387,8 @@ function connectWhoop() {
     scope,
     state: 'whoop'
   });
+  // Set a sessionStorage flag so we recognise the callback even if Whoop omits state
+  try { sessionStorage.setItem('whoop_oauth_pending', '1'); } catch(e) {}
   window.location.href = `https://api.prod.whoop.com/oauth/oauth2/auth?${params.toString()}`;
 }
 
