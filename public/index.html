@@ -1484,6 +1484,10 @@ async function fetchWhoopData() {
     if (currentActivity?.start_date || currentActivity?.start_date_local) {
       payload.activity_start = currentActivity.start_date || currentActivity.start_date_local;
     }
+    if (currentActivity?.start_date && currentActivity?.elapsed_time) {
+      const endMs = new Date(currentActivity.start_date).getTime() + currentActivity.elapsed_time * 1000;
+      payload.activity_end = new Date(endMs).toISOString();
+    }
 
     const resp = await fetch('/.netlify/functions/whoop-data', {
       method: 'POST',
@@ -1532,6 +1536,7 @@ function renderWhoopData(data) {
   const cy   = data.cycle;
   const psl  = data.post_sleep;
   const prec = data.post_recovery;
+  const wo   = data.workout;
 
   // Show any API errors so we can debug scope/auth issues
   if (data._errors) {
@@ -1628,17 +1633,71 @@ function renderWhoopData(data) {
       </div>`);
   }
 
-  // ── Today: Strain + Day HR ────────────────────────────────────────────────
+  // ── Workout Load ──────────────────────────────────────────────────────────
+  if (wo) {
+    const scored  = wo.score_state === 'SCORED';
+    const sc      = wo.strain;
+    const scc     = sc >= 18 ? 'var(--red)' : sc >= 14 ? 'var(--amber)' : sc >= 10 ? 'var(--green)' : 'var(--muted)';
+    const strainLabel = sc >= 18 ? 'All Out' : sc >= 14 ? 'Strenuous' : sc >= 10 ? 'Moderate' : 'Light';
+    const kcal    = wo.kilojoule ? Math.round(wo.kilojoule / 4.184) : null;
+    const distKm  = wo.distance_meter ? (wo.distance_meter / 1000).toFixed(2) : null;
+    const altGain = wo.altitude_gain  ? Math.round(wo.altitude_gain) : null;
+    const unscored = !scored ? `<div class="error-banner" style="margin-bottom:10px;font-size:11px;">Workout ${wo.score_state || 'not yet scored'}</div>` : '';
+
+    const topCards = [];
+    if (sc        != null) topCards.push(`<div class="metric" style="border-color:${scc}33;background:${scc}18;"><div class="metric-val" style="color:${scc};">${sc.toFixed(1)}</div><div class="metric-lbl">Workout strain · ${strainLabel}</div></div>`);
+    if (wo.avg_hr != null) topCards.push(`<div class="metric"><div class="metric-val">${Math.round(wo.avg_hr)}</div><div class="metric-lbl">Avg HR (workout)</div></div>`);
+    if (wo.max_hr != null) topCards.push(`<div class="metric"><div class="metric-val">${Math.round(wo.max_hr)}</div><div class="metric-lbl">Max HR (workout)</div></div>`);
+    if (kcal)              topCards.push(`<div class="metric"><div class="metric-val">${kcal}</div><div class="metric-lbl">Calories (workout)</div></div>`);
+    if (distKm)            topCards.push(`<div class="metric"><div class="metric-val">${distKm} km</div><div class="metric-lbl">Distance (Whoop)</div></div>`);
+    if (altGain)           topCards.push(`<div class="metric"><div class="metric-val">${altGain} m</div><div class="metric-lbl">Elevation gain</div></div>`);
+    if (wo.percent_recorded != null) topCards.push(`<div class="metric"><div class="metric-val">${wo.percent_recorded}%</div><div class="metric-lbl">Data recorded</div></div>`);
+
+    const zoneData = [
+      { name: 'Z5 Max',     ms: wo.zone_five_milli,  color: '#ef4444' },
+      { name: 'Z4 Hard',    ms: wo.zone_four_milli,  color: '#f97316' },
+      { name: 'Z3 Tempo',   ms: wo.zone_three_milli, color: '#fbbf24' },
+      { name: 'Z2 Aerobic', ms: wo.zone_two_milli,   color: '#4ade80' },
+      { name: 'Z1 Light',   ms: wo.zone_one_milli,   color: '#60a5fa' },
+      { name: 'Z0 Rest',    ms: wo.zone_zero_milli,  color: '#94a3b8' }
+    ].filter(z => (z.ms || 0) > 0);
+
+    const totalZoneMs = zoneData.reduce((s, z) => s + (z.ms || 0), 0) || 1;
+    const zoneHtml = zoneData.length ? `
+      <div class="chart-box" style="padding:12px 16px;margin-top:14px;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--faint);margin-bottom:10px;">HR zones (% of max HR)</div>
+        ${zoneData.map(z => {
+          const pct = Math.round((z.ms / totalZoneMs) * 100);
+          return `<div class="zone-row">
+            <span class="zone-name" style="color:${z.color};width:72px;">${z.name}</span>
+            <div class="zone-track"><div class="zone-fill" style="width:${pct}%;background:${z.color};"></div></div>
+            <span class="zone-pct">${pct}%</span>
+            <span class="zone-time">${fmtMs(z.ms)}</span>
+          </div>`;
+        }).join('')}
+      </div>` : '';
+
+    const sportLabel = wo.sport_name ? ` · <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">${escapeHtml(wo.sport_name)}</span>` : '';
+    parts.push(`
+      <div style="margin-bottom:22px;">
+        ${whoopSubHead(`Workout Load${sportLabel}`)}
+        ${unscored}
+        ${topCards.length ? `<div class="metrics-grid" style="margin-bottom:0;">${topCards.join('')}</div>` : ''}
+        ${zoneHtml}
+      </div>`);
+  }
+
+  // ── Day Total: Strain ─────────────────────────────────────────────────────
   if (cy) {
     const sc  = cy.strain;
     const scc = sc >= 18 ? 'var(--red)' : sc >= 10 ? 'var(--amber)' : 'var(--green)';
     const kcal = cy.kilojoule ? Math.round(cy.kilojoule / 4.184) : null;
     const cards = [];
-    if (sc        != null) cards.push(`<div class="metric" style="border-color:${scc}33;background:${scc}18;"><div class="metric-val" style="color:${scc};">${sc.toFixed(1)}</div><div class="metric-lbl">Day strain</div></div>`);
-    if (cy.avg_hr != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(cy.avg_hr)}</div><div class="metric-lbl">Avg HR (day)</div></div>`);
-    if (cy.max_hr != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(cy.max_hr)}</div><div class="metric-lbl">Max HR (day)</div></div>`);
-    if (kcal)               cards.push(`<div class="metric"><div class="metric-val">${kcal}</div><div class="metric-lbl">Calories (kcal)</div></div>`);
-    parts.push(`<div style="margin-bottom:22px;">${whoopSubHead('Today · Strain')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
+    if (sc        != null) cards.push(`<div class="metric" style="border-color:${scc}33;background:${scc}18;"><div class="metric-val" style="color:${scc};">${sc.toFixed(1)}</div><div class="metric-lbl">Day strain (total)</div></div>`);
+    if (cy.avg_hr != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(cy.avg_hr)}</div><div class="metric-lbl">Avg HR (full day)</div></div>`);
+    if (cy.max_hr != null) cards.push(`<div class="metric"><div class="metric-val">${Math.round(cy.max_hr)}</div><div class="metric-lbl">Max HR (full day)</div></div>`);
+    if (kcal)               cards.push(`<div class="metric"><div class="metric-val">${kcal}</div><div class="metric-lbl">Calories (full day)</div></div>`);
+    parts.push(`<div style="margin-bottom:22px;">${whoopSubHead('Day Total · Strain')}<div class="metrics-grid" style="margin-bottom:0;">${cards.join('')}</div></div>`);
   }
 
   // ── Next Night: Sleep (post-activity) ────────────────────────────────────
@@ -1731,6 +1790,7 @@ function formatWhoopForClipboard(d) {
   const cy   = d.cycle;
   const psl  = d.post_sleep;
   const prec = d.post_recovery;
+  const wo   = d.workout;
 
   if (rec) {
     lines.push('\nNIGHT BEFORE — RECOVERY');
@@ -1769,12 +1829,33 @@ function formatWhoopForClipboard(d) {
     if (sl.awake_milli > 0) lines.push(`Awake:              ${Math.round(sl.awake_milli / inBed * 100)}% · ${fmtMs(sl.awake_milli)}`);
   }
 
+  if (wo) {
+    const strainLabel = wo.strain >= 18 ? 'All Out' : wo.strain >= 14 ? 'Strenuous' : wo.strain >= 10 ? 'Moderate' : 'Light';
+    lines.push(`\nWORKOUT LOAD${wo.sport_name ? ' — ' + wo.sport_name : ''}`);
+    lines.push(`Score state:        ${wo.score_state || 'unknown'}`);
+    if (wo.strain           != null) lines.push(`Workout strain:     ${wo.strain.toFixed(1)} (${strainLabel})`);
+    if (wo.avg_hr           != null) lines.push(`Avg HR (workout):   ${Math.round(wo.avg_hr)} bpm`);
+    if (wo.max_hr           != null) lines.push(`Max HR (workout):   ${Math.round(wo.max_hr)} bpm`);
+    if (wo.kilojoule)                lines.push(`Calories (workout): ${Math.round(wo.kilojoule / 4.184)} kcal`);
+    if (wo.distance_meter)           lines.push(`Distance (Whoop):   ${(wo.distance_meter / 1000).toFixed(2)} km`);
+    if (wo.altitude_gain)            lines.push(`Elevation gain:     ${Math.round(wo.altitude_gain)} m`);
+    if (wo.percent_recorded != null) lines.push(`Data recorded:      ${wo.percent_recorded}%`);
+    const totalZoneMs = (wo.zone_zero_milli||0)+(wo.zone_one_milli||0)+(wo.zone_two_milli||0)+
+                        (wo.zone_three_milli||0)+(wo.zone_four_milli||0)+(wo.zone_five_milli||0) || 1;
+    if (wo.zone_five_milli  > 0) lines.push(`Z5 Max (90%+):      ${Math.round(wo.zone_five_milli/totalZoneMs*100)}% · ${fmtMs(wo.zone_five_milli)}`);
+    if (wo.zone_four_milli  > 0) lines.push(`Z4 Hard (80-90%):   ${Math.round(wo.zone_four_milli/totalZoneMs*100)}% · ${fmtMs(wo.zone_four_milli)}`);
+    if (wo.zone_three_milli > 0) lines.push(`Z3 Tempo (70-80%):  ${Math.round(wo.zone_three_milli/totalZoneMs*100)}% · ${fmtMs(wo.zone_three_milli)}`);
+    if (wo.zone_two_milli   > 0) lines.push(`Z2 Aerobic (60-70%):${Math.round(wo.zone_two_milli/totalZoneMs*100)}% · ${fmtMs(wo.zone_two_milli)}`);
+    if (wo.zone_one_milli   > 0) lines.push(`Z1 Light (50-60%):  ${Math.round(wo.zone_one_milli/totalZoneMs*100)}% · ${fmtMs(wo.zone_one_milli)}`);
+    if (wo.zone_zero_milli  > 0) lines.push(`Z0 Rest (<50%):     ${Math.round(wo.zone_zero_milli/totalZoneMs*100)}% · ${fmtMs(wo.zone_zero_milli)}`);
+  }
+
   if (cy) {
-    lines.push('\nACTIVITY DAY — STRAIN');
+    lines.push('\nDAY TOTAL — STRAIN (full physiological day, all activities)');
     if (cy.strain  != null) lines.push(`Day strain:         ${cy.strain.toFixed(1)}`);
     if (cy.avg_hr  != null) lines.push(`Avg HR (day):       ${Math.round(cy.avg_hr)} bpm`);
     if (cy.max_hr  != null) lines.push(`Max HR (day):       ${Math.round(cy.max_hr)} bpm`);
-    if (cy.kilojoule)       lines.push(`Calories:           ${Math.round(cy.kilojoule / 4.184)} kcal`);
+    if (cy.kilojoule)       lines.push(`Calories (day):     ${Math.round(cy.kilojoule / 4.184)} kcal`);
   }
 
   if (psl) {

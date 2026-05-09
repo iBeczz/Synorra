@@ -14,7 +14,7 @@ exports.handler = async (event) => {
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
 
-  let { access_token, refresh_token, expires_at, activity_start } = body;
+  let { access_token, refresh_token, expires_at, activity_start, activity_end } = body;
 
   if (!access_token) {
     return { statusCode: 400, headers: cors, body: JSON.stringify({ error: 'Missing Whoop token' }) };
@@ -62,16 +62,29 @@ exports.handler = async (event) => {
     }
   };
 
-  const [recoveryRes, sleepRes, cycleRes, bodyRes] = await Promise.all([
+  // For the workout query, use the activity window ± 30 min to catch Whoop's own
+  // start/stop time which may not align exactly with the Strava recording.
+  let workoutPath = '/activity/workout?limit=10';
+  if (activity_start) {
+    const wStart = new Date(new Date(activity_start).getTime() - 30 * 60000).toISOString();
+    const wEnd   = activity_end
+      ? new Date(new Date(activity_end).getTime()   + 30 * 60000).toISOString()
+      : new Date(new Date(activity_start).getTime() + 6 * 3600000).toISOString();
+    workoutPath = `/activity/workout?limit=10&start=${wStart}&end=${wEnd}`;
+  }
+
+  const [recoveryRes, sleepRes, cycleRes, bodyRes, workoutRes] = await Promise.all([
     safeGet('recovery', '/recovery?limit=10'),
     safeGet('sleep',    '/activity/sleep?limit=14'),
     safeGet('cycle',    '/cycle?limit=3'),
-    safeGet('body',     '/user/measurement/body')
+    safeGet('body',     '/user/measurement/body'),
+    safeGet('workout',  workoutPath)
   ]);
 
   const recoveries = recoveryRes?.records || [];
   const sleeps     = sleepRes?.records    || [];
   const cycles     = cycleRes?.records    || [];
+  const workouts   = workoutRes?.records  || [];
 
   // Whoop returns records newest-first.
   // Pre-activity: most recent non-nap sleep that fully ended before the activity.
@@ -82,7 +95,6 @@ exports.handler = async (event) => {
   if (activity_start) {
     const cutoff = new Date(activity_start);
     preSleep  = sleeps.find(s => !s.nap && new Date(s.end) <= cutoff) || null;
-    // Reverse so oldest-first, then find the first sleep after the activity start
     postSleep = [...sleeps].reverse().find(s => !s.nap && new Date(s.start) > cutoff) || null;
   }
   if (!preSleep) preSleep = sleeps.find(s => !s.nap) || sleeps[0] || null;
@@ -94,12 +106,29 @@ exports.handler = async (event) => {
     ? (recoveries.find(r => r.sleep_id === postSleep.id) || null)
     : null;
 
-  // Current-day cycle: prefer the cycle whose start date matches the activity date
+  // Prefer the cycle whose start date matches the activity date
   let cycle = cycles[0] || null;
   if (activity_start && cycles.length > 1) {
     const actDate = new Date(activity_start).toDateString();
     const match = cycles.find(c => new Date(c.start).toDateString() === actDate);
     if (match) cycle = match;
+  }
+
+  // Best-matching workout: highest overlap with the activity window
+  let workout = null;
+  if (activity_start && workouts.length) {
+    const actStart = new Date(activity_start).getTime();
+    const actEnd   = activity_end ? new Date(activity_end).getTime() : actStart + 3600000;
+    let bestOverlap = 0;
+    for (const w of workouts) {
+      const wS = new Date(w.start).getTime();
+      const wE = new Date(w.end).getTime();
+      const overlap = Math.max(0, Math.min(actEnd, wE) - Math.max(actStart, wS));
+      if (overlap > bestOverlap) { bestOverlap = overlap; workout = w; }
+    }
+    // Fallback: if no overlap (e.g. Whoop started a minute or two before Strava)
+    // accept any workout within the window
+    if (!workout) workout = workouts[0] || null;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -160,12 +189,39 @@ exports.handler = async (event) => {
     };
   };
 
+  const buildWorkout = (rec) => {
+    if (!rec) return null;
+    const scored = rec.score_state === 'SCORED';
+    const ws     = scored ? rec.score : null;
+    const zones  = ws?.zone_durations || {};
+    return {
+      score_state:      rec.score_state,
+      sport_name:       rec.sport_name ?? null,
+      start:            rec.start,
+      end:              rec.end,
+      strain:           ws?.strain             ?? null,
+      avg_hr:           ws?.average_heart_rate ?? null,
+      max_hr:           ws?.max_heart_rate     ?? null,
+      kilojoule:        ws?.kilojoule          ?? null,
+      percent_recorded: ws?.percent_recorded   ?? null,
+      distance_meter:   ws?.distance_meter     ?? null,
+      altitude_gain:    ws?.altitude_gain_meter ?? null,
+      zone_zero_milli:  zones.zone_zero_milli  ?? null,
+      zone_one_milli:   zones.zone_one_milli   ?? null,
+      zone_two_milli:   zones.zone_two_milli   ?? null,
+      zone_three_milli: zones.zone_three_milli ?? null,
+      zone_four_milli:  zones.zone_four_milli  ?? null,
+      zone_five_milli:  zones.zone_five_milli  ?? null
+    };
+  };
+
   const result = {
-    new_token:    { access_token, refresh_token, expires_at },
-    recovery:     buildRecovery(preRecovery),
-    sleep:        buildSleep(preSleep),
-    post_sleep:   activity_start ? buildSleep(postSleep)   : undefined,
-    post_recovery: activity_start ? buildRecovery(postRecovery) : undefined
+    new_token:     { access_token, refresh_token, expires_at },
+    recovery:      buildRecovery(preRecovery),
+    sleep:         buildSleep(preSleep),
+    workout:       activity_start ? buildWorkout(workout)        : undefined,
+    post_sleep:    activity_start ? buildSleep(postSleep)        : undefined,
+    post_recovery: activity_start ? buildRecovery(postRecovery)  : undefined
   };
 
   if (cycle?.score_state === 'SCORED' && cycle.score) {
