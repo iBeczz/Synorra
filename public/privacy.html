@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Training Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f0f;
+    --surface: #161718;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0ede8;
+    --muted: #888580;
+    --faint: #444240;
+    --orange: #FC4C02;
+    --sans: 'Syne', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+    text-decoration: none; color: var(--text);
+  }
+  .logo-mark {
+    width: 28px; height: 28px; background: var(--orange);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 16px; height: 16px; }
+  .back-link {
+    font-size: 13px; color: var(--muted); text-decoration: none;
+    border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px;
+    transition: all 0.15s;
+  }
+  .back-link:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+  .content {
+    max-width: 680px; margin: 0 auto; padding: 56px 32px;
+  }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 48px; }
+  h2 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--faint); margin-top: 36px; margin-bottom: 12px; }
+  p { color: var(--muted); margin-bottom: 16px; }
+  a { color: var(--orange); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="logo" href="/">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+    </div>
+    Training Lab
+  </a>
+  <a class="back-link" href="/">Back to dashboard</a>
+</div>
+
+<div class="content">
+  <h1>Privacy Policy</h1>
+  <p class="subtitle">Last updated: May 2026</p>
+
+  <h2>Overview</h2>
+  <p>Training Lab is a personal fitness dashboard built and used exclusively by its developer. It is not a public-facing product or service.</p>
+
+  <h2>Who uses this app</h2>
+  <p>This application is used solely by its developer. There are no other users, accounts, or registrations.</p>
+
+  <h2>Data collected and how it is used</h2>
+  <p>The dashboard connects to Strava and Whoop to read personal fitness data (activity records, recovery scores, sleep metrics, and heart rate data). This data is fetched on-demand and displayed only in the browser. It is not stored on any server, database, or third-party service beyond what Strava and Whoop themselves retain.</p>
+  <p>OAuth tokens (used to authenticate with Strava and Whoop) are stored locally in the browser's <code>localStorage</code> on the developer's own device. Whoop's client credentials are stored as environment variables on Netlify and are never exposed to the browser.</p>
+
+  <h2>Data sharing</h2>
+  <p>No data is shared with any third parties. No analytics, tracking scripts, or advertising services are present on this site.</p>
+
+  <h2>Third-party services</h2>
+  <p>This application connects to the following external services at the developer's direction:</p>
+  <p>
+    <strong>Strava</strong> — activity and GPS data. Governed by <a href="https://www.strava.com/legal/privacy" target="_blank">Strava's Privacy Policy</a>.<br>
+    <strong>Whoop</strong> — recovery, sleep, and strain data. Governed by <a href="https://www.whoop.com/us/en/privacy-policy/" target="_blank">Whoop's Privacy Policy</a>.<br>
+    <strong>Netlify</strong> — hosting and serverless functions. Governed by <a href="https://www.netlify.com/privacy/" target="_blank">Netlify's Privacy Policy</a>.
+  </p>
+
+  <h2>Contact</h2>
+  <p>As this is a personal tool, there is no support or contact mechanism. If you have reached this page in error, please navigate away.</p>
+
+  <hr>
+  <p style="font-size:12px;">Training Lab — personal use only.</p>
+</div>
+
+</body>
+</html>

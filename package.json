@@ -1,0 +1,7 @@
+{
+  "name": "fitness-report",
+  "version": "1.0.0",
+  "description": "Strava + Whoop fitness dashboard",
+  "private": true,
+  "dependencies": {}
+}
