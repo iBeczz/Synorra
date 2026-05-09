@@ -714,8 +714,75 @@ const crosshairPlugin = {
   }
 };
 
+const BAND_PAD = 0.08; // fraction of band height kept as padding top + bottom
+const BAND_FILL = 1 - BAND_PAD * 2;
+
+const swimLanePlugin = {
+  id: 'swimLane',
+  afterDraw(chart, _args, opts) {
+    const entries = opts.entries;
+    if (!entries || !entries.length) return;
+    const { ctx, chartArea } = chart;
+    const yScale = chart.scales.y;
+    if (!yScale) return;
+    ctx.save();
+    const n = entries.length;
+    for (let idx = 0; idx < n; idx++) {
+      const [, cfg] = entries[idx];
+      const ds = chart.data.datasets[idx];
+      if (!ds) continue;
+      const topY    = yScale.getPixelForValue(idx + 1);
+      const bottomY = yScale.getPixelForValue(idx);
+      const midY    = (topY + bottomY) / 2;
+      const bandH   = bottomY - topY;
+
+      // Subtle alternating band tint
+      ctx.fillStyle = idx % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0)';
+      ctx.fillRect(chartArea.left, topY, chartArea.width, bandH);
+
+      // Separator line above each band (except the first)
+      if (idx > 0) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+        ctx.lineWidth = 1; ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(chartArea.left, topY); ctx.lineTo(chartArea.right, topY); ctx.stroke();
+      }
+
+      // Stream label — colour pill in top-left of band
+      const labelText = cfg.label.toUpperCase();
+      ctx.font = '600 9px "DM Mono", monospace';
+      const tw = ctx.measureText(labelText).width;
+      const pill = { x: chartArea.left + 8, y: topY + 6, w: tw + 10, h: 16, r: 4 };
+      ctx.fillStyle = cfg.color + '22';
+      ctx.beginPath();
+      ctx.roundRect(pill.x - 5, pill.y, pill.w, pill.h, pill.r);
+      ctx.fill();
+      ctx.fillStyle = cfg.color;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText(labelText, pill.x, pill.y + 4);
+
+      // Min / max value labels at bottom and top of band
+      if (ds._minV != null && ds._maxV != null) {
+        const fmtV = (v) => {
+          if (cfg.unit === '/km') { const m=Math.floor(v),s=Math.round((v-m)*60); return `${m}:${String(s).padStart(2,'0')}`; }
+          return Number.isInteger(v) ? String(v) : v.toFixed(1);
+        };
+        ctx.font = '9px "DM Mono", monospace';
+        ctx.fillStyle = 'rgba(150,145,140,0.55)';
+        ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+        const hiLabel = cfg.reversed ? fmtV(ds._minV) : fmtV(ds._maxV);
+        const loLabel = cfg.reversed ? fmtV(ds._maxV) : fmtV(ds._minV);
+        ctx.fillText(hiLabel + ' ' + cfg.unit, chartArea.right - 6, topY + 4);
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(loLabel + ' ' + cfg.unit, chartArea.right - 6, bottomY - 4);
+      }
+    }
+    ctx.restore();
+  }
+};
+
 Chart.register(splitHighlightPlugin);
 Chart.register(crosshairPlugin);
+Chart.register(swimLanePlugin);
 
 // ─── UTILS ───
 function fmtPace(mps) {
@@ -1190,45 +1257,61 @@ function rebuildChart() {
   const labels = [];
   for (let i = 0; i < N; i += step) labels.push(distArr[i] ? (distArr[i]/1000).toFixed(2) : (timeArr[i]/60).toFixed(1));
 
-  const datasets = [];
-  const axes = {};
-  let leftUsed = false, rightUsed = false;
+  // Collect active entries that have data
+  const activeEntries = Object.entries(STREAM_CFG).filter(([key, cfg]) =>
+    activeStreams.has(key) && (streamData[cfg.key]?.data || []).length > 0
+  );
+  const numBands = activeEntries.length;
+  if (!numBands) return;
 
-  for (const [key, cfg] of Object.entries(STREAM_CFG)) {
-    if (!activeStreams.has(key)) continue;
+  const datasets = [];
+
+  for (let idx = 0; idx < numBands; idx++) {
+    const [key, cfg] = activeEntries[idx];
     const raw = streamData[cfg.key]?.data || [];
-    if (!raw.length) continue;
+
+    // Compute min/max from real values
+    let minV = Infinity, maxV = -Infinity;
+    for (let i = 0; i < N; i += step) {
+      const v = cfg.xform(raw[i] ?? null);
+      if (v != null) { if (v < minV) minV = v; if (v > maxV) maxV = v; }
+    }
+    if (!isFinite(minV)) { minV = 0; maxV = 1; }
+    const range = maxV - minV || 1;
+
+    // Normalise into band [idx+PAD, idx+1-PAD]
     const data = [];
-    for (let i = 0; i < N; i += step) data.push(cfg.xform(raw[i] ?? null));
-    const axId = 'y_' + key;
-    const isRight = cfg.side === 'right';
-    const showAxis = isRight ? !rightUsed : !leftUsed;
-    if (isRight) rightUsed = true; else leftUsed = true;
-    axes[axId] = {
-      position: isRight ? 'right' : 'left',
-      reverse: cfg.reversed,
-      display: showAxis,
-      ticks: { color: cfg.color, font: { size: 10, family: "'DM Mono', monospace" }, maxTicksLimit: 6 },
-      grid: { color: showAxis ? 'rgba(255,255,255,0.06)' : 'transparent', display: showAxis }
-    };
+    for (let i = 0; i < N; i += step) {
+      const v = cfg.xform(raw[i] ?? null);
+      if (v == null) { data.push(null); continue; }
+      let norm = (v - minV) / range; // 0 = min, 1 = max
+      if (cfg.reversed) norm = 1 - norm; // flip so "better" value is higher
+      data.push(idx + BAND_PAD + norm * BAND_FILL);
+    }
+
     datasets.push({
       label: cfg.label, data,
       borderColor: cfg.color,
       backgroundColor: cfg.color + '18',
       borderWidth: 1.5, pointRadius: 0,
-      yAxisID: axId, fill: cfg.fill,
+      yAxisID: 'y', fill: false,
       tension: 0.3, spanGaps: true,
-      _unit: cfg.unit, _reversed: cfg.reversed
+      _unit: cfg.unit, _reversed: cfg.reversed,
+      _minV: minV, _maxV: maxV, _bandIdx: idx
     });
   }
-
-  if (!datasets.length) return;
 
   const canvas = document.getElementById('main-chart'); if (!canvas) return;
   if (currentChart) { currentChart.destroy(); currentChart = null; }
 
+  // Resize chart-wrap proportionally to number of bands
+  const ROW_H = 140;
+  canvas.parentNode.style.height = (numBands * ROW_H) + 'px';
+
   const legend = document.getElementById('chart-legend');
-  if (legend) legend.innerHTML = datasets.map(ds => `<div class="legend-item"><div class="legend-dot" style="background:${ds.borderColor}"></div>${ds.label}</div>`).join('');
+  if (legend) legend.innerHTML = activeEntries.map(([, cfg]) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${cfg.color}"></div>${cfg.label}</div>`
+  ).join('');
 
   currentChart = new Chart(canvas, {
     type: 'line',
@@ -1239,6 +1322,9 @@ function rebuildChart() {
       onHover: (evt, elements) => { if (elements.length > 0) syncMapToChartIndex(elements[0].index); },
       plugins: {
         legend: { display: false },
+        crosshair: {},
+        splitHighlight: {},
+        swimLane: { entries: activeEntries },
         tooltip: {
           enabled: false,
           external(context) {
@@ -1253,39 +1339,46 @@ function rebuildChart() {
             }
             if (tooltip.opacity === 0) { el.style.opacity = '0'; return; }
 
-            // Elapsed time at this chart index
+            // Elapsed time lookup
             const chartIdx = tooltip.dataPoints?.[0]?.dataIndex ?? -1;
-            const N = streamData?.time?.data?.length || 0;
-            const step = Math.max(1, Math.floor(N / 400));
             const rawIdx = chartIdx >= 0 ? Math.min(N - 1, chartIdx * step) : -1;
             const elapsedSecs = rawIdx >= 0 ? (streamData?.time?.data?.[rawIdx] ?? null) : null;
             const elapsedStr = elapsedSecs != null ? fmtTime(elapsedSecs) : null;
 
             const distLabel = tooltip.title?.[0] || '--';
             const header = `<div style="color:#888580;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:5px;">${distLabel} km${elapsedStr ? ` · ${elapsedStr}` : ''}</div>`;
+
             const lines = (tooltip.dataPoints || []).map(dp => {
-              const v = dp.parsed.y; if (v == null) return '';
-              const ds = dp.dataset; const unit = ds._unit || '';
+              const bandY = dp.parsed.y; if (bandY == null) return '';
+              const ds = dp.dataset;
+              // Denormalise from band position back to real value
+              let norm = (bandY - ds._bandIdx - BAND_PAD) / BAND_FILL;
+              norm = Math.max(0, Math.min(1, norm));
+              if (ds._reversed) norm = 1 - norm;
+              const actualV = ds._minV + norm * (ds._maxV - ds._minV);
+              const unit = ds._unit || '';
               if (ds._reversed && unit === '/km') {
-                const m = Math.floor(v), s = Math.round((v - m) * 60);
+                const m = Math.floor(actualV), s = Math.round((actualV - m) * 60);
                 return `<div style="color:${ds.borderColor};margin-top:3px;">${ds.label}: ${m}:${String(s).padStart(2,'0')} /km</div>`;
               }
-              return `<div style="color:${ds.borderColor};margin-top:3px;">${ds.label}: ${v.toFixed(1)} ${unit}</div>`;
+              const disp = (unit === 'bpm' || unit === 'spm' || unit === 'W')
+                ? Math.round(actualV) + ' ' + unit
+                : actualV.toFixed(1) + ' ' + unit;
+              return `<div style="color:${ds.borderColor};margin-top:3px;">${ds.label}: ${disp}</div>`;
             }).filter(Boolean).join('');
 
             el.innerHTML = header + lines;
             el.style.opacity = '1';
-
-            // Fixed y (top of chart), x follows cursor clamped to stay in view
             const x = tooltip.caretX + 14;
             const maxL = wrap.offsetWidth - el.offsetWidth - 8;
             el.style.left = Math.min(Math.max(8, x), Math.max(8, maxL)) + 'px';
           }
-        },
-        crosshair: {},
-        splitHighlight: {}
+        }
       },
-      scales: { x: { ticks: { maxTicksLimit: 10, color: '#444240', font: { size: 10, family: "'DM Mono', monospace" } }, grid: { color: 'rgba(255,255,255,0.04)' } }, ...axes }
+      scales: {
+        x: { ticks: { maxTicksLimit: 10, color: '#444240', font: { size: 10, family: "'DM Mono', monospace" } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { position: 'left', min: 0, max: numBands, display: false, grid: { display: false } }
+      }
     }
   });
 }
@@ -1301,7 +1394,8 @@ let mapSplitHighlight = null;
 function highlightKmOnMap(km) {
   if (pinnedSplitKm !== null && pinnedSplitKm !== km) return;
   if (!leafletMap || !mapStreamData) return;
-  clearKmHighlight();
+  // Directly remove old polyline — clearKmHighlight would bail when pinned
+  if (mapSplitHighlight) { leafletMap.removeLayer(mapSplitHighlight); mapSplitHighlight = null; }
 
   const latlng = mapStreamData.latlng?.data || [];
   const dist   = mapStreamData.distance?.data || [];
