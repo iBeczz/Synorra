@@ -62,25 +62,19 @@
   .feed-topbar {
     padding: 20px 24px 0;
     flex-shrink: 0;
-    max-width: 820px; width: 100%; margin: 0 auto; box-sizing: border-box;
   }
   .feed-filter-bar {
-    display: flex; flex-direction: column; gap: 12px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     padding: 14px 24px 0;
     flex-shrink: 0;
-    max-width: 820px; width: 100%; margin: 0 auto; box-sizing: border-box;
   }
   .feed-filter-bar .filter-search {
-    width: 100%;
+    flex: 1; min-width: 180px;
   }
   .feed-count {
     font-size: 10px; color: var(--faint); font-family: var(--mono);
     padding: 8px 24px 0;
     flex-shrink: 0;
-    max-width: 820px; width: 100%; margin: 0 auto; box-sizing: border-box;
-  }
-  .feed-heading {
-    font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px;
   }
   .activity-tiles {
     display: flex; flex-direction: column; gap: 20px;
@@ -99,10 +93,10 @@
     box-shadow: 0 8px 30px rgba(0,0,0,0.4);
   }
   .tile-map {
-    width: 100%; height: 260px; background: #2d3e50; overflow: hidden;
+    width: 100%; height: 260px; background: #0c0e0f; overflow: hidden;
     position: relative;
   }
-  .tile-map .leaflet-container { background: #2d3e50; }
+  .tile-map .leaflet-container { background: #0c0e0f; }
   .tile-no-map {
     width: 100%; height: 260px; background: #0c0e0f;
     display: flex; align-items: center; justify-content: center;
@@ -568,7 +562,7 @@
     background: none; color: var(--muted); cursor: pointer;
   }
   .map-tab.active { background: var(--orange); border-color: var(--orange); color: white; }
-  .leaflet-tile-pane { }
+  .leaflet-tile-pane { filter: grayscale(0.8) brightness(0.5) contrast(1.1); }
   .leaflet-control-attribution { display: none !important; }
 
   .split-tab-btn { font-family:var(--mono);font-size:9px;font-weight:600;background:none;border:1px solid var(--border);color:var(--faint);border-radius:4px;padding:2px 8px;cursor:pointer;transition:all 0.15s; }
@@ -620,13 +614,15 @@
 
     /* ── Home feed ── */
     .feed-topbar    { padding: 12px 14px 0; }
-    .feed-heading { font-size: 18px; margin-bottom: 12px; }
     .feed-filter-bar {
-      padding: 10px 14px 0; gap: 8px;
-      max-width: 100%;
+      padding: 10px 14px 0; gap: 6px;
+      flex-direction: row; flex-wrap: wrap;  /* keep row layout, wrap selects */
     }
-    .feed-filter-bar .filter-search { width: 100%; }
-    .feed-filter-bar select.filter-select { font-size: 10px; }
+    /* Search always occupies the full first row */
+    .feed-filter-bar .filter-search { min-width: 100%; order: -1; }
+    /* Selects share the row below, shrink as needed */
+    .feed-filter-bar select.filter-select { flex: 1; min-width: 0; font-size: 10px; }
+    .feed-filter-bar .filter-clear { flex: 0; }
     .feed-count { padding: 6px 14px 0; }
 
     .activity-tiles {
@@ -748,7 +744,7 @@
       <div class="logo-mark">
         <svg viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
       </div>
-      Training Lab
+      Synorra
     </div>
     <div class="topbar-right" id="topbar-right">
       <button class="btn-analyse" id="copy-btn" onclick="copyToClipboard()" style="display:none;padding:7px 16px;font-size:12px;">
@@ -760,7 +756,7 @@
 
   <!-- AUTH -->
   <div class="auth-screen" id="auth-screen">
-    <div class="auth-title">Training Lab</div>
+    <div class="auth-title">Synorra</div>
     <div class="auth-sub">Full-granularity Strava analysis. Every heartbeat, every hill, every split — fed directly to Claude.</div>
     <button class="btn-strava" id="strava-auth-btn">
       <svg viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
@@ -827,9 +823,6 @@
     <div id="home-feed">
       <div class="feed-topbar">
         <div id="athlete-stats"></div>
-      </div>
-      <div style="max-width: 820px; width: 100%; margin: 0 auto; box-sizing: border-box; padding: 0 24px;">
-        <div class="feed-heading">Workouts</div>
       </div>
       <div class="feed-filter-bar">
         <div class="filter-search" style="flex:1;min-width:180px;">
@@ -1455,8 +1448,8 @@ function initSingleTileMap(container, encoded, tid) {
     keyboard: false, tap: false
   });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, subdomains: 'abcd'
   }).addTo(map);
 
   const latlngs = coords.map(([lat, lng]) => [lat, lng]);
@@ -1465,7 +1458,7 @@ function initSingleTileMap(container, encoded, tid) {
   // Main route
   const line = L.polyline(latlngs, { color: '#fc4c02', weight: 3.5, opacity: 0.95, smoothFactor: 1 }).addTo(map);
 
-  map.fitBounds(line.getBounds(), { padding: [24, 24] });
+  map.fitBounds(line.getBounds(), { padding: [24, 24], maxZoom: 16 });
   tileMapInstances[tid] = map;
 }
 
