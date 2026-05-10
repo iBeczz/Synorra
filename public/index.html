@@ -406,12 +406,13 @@
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
   .chart-ext-tooltip {
-    position: absolute; pointer-events: none; top: 10px;
+    position: absolute; pointer-events: none;
     background: #1e2021; border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 8px; padding: 8px 12px;
+    border-radius: 8px; padding: 6px 10px;
     font-family: var(--mono); font-size: 11px; color: #f0ede8;
     z-index: 10; white-space: nowrap; opacity: 0;
     transition: opacity 0.1s, left 0.04s;
+    transform: translateY(-50%);
   }
 
   .zone-edit-btn {
@@ -1365,6 +1366,8 @@ function rebuildChart() {
 
   const canvas = document.getElementById('main-chart'); if (!canvas) return;
   if (currentChart) { currentChart.destroy(); currentChart = null; }
+  // Remove stale per-band tooltip elements so they don't linger across rebuilds
+  canvas.parentNode.querySelectorAll('.chart-ext-tooltip').forEach(e => e.remove());
 
   // Variable-height canvas: tall bands for metrics with significant outliers
   canvas.parentNode.style.height = bandPreComp.reduce((s, d) => s + d.rowH, 0) + 'px';
@@ -1391,46 +1394,74 @@ function rebuildChart() {
           external(context) {
             const { chart, tooltip } = context;
             const wrap = chart.canvas.parentNode;
-            let el = wrap.querySelector('.chart-ext-tooltip');
-            if (!el) {
-              el = document.createElement('div');
-              el.className = 'chart-ext-tooltip';
-              wrap.style.position = 'relative';
-              wrap.appendChild(el);
+
+            // Hide all band tooltips when cursor leaves the chart
+            if (tooltip.opacity === 0) {
+              wrap.querySelectorAll('.chart-ext-tooltip').forEach(e => e.style.opacity = '0');
+              return;
             }
-            if (tooltip.opacity === 0) { el.style.opacity = '0'; return; }
 
-            // Elapsed time lookup
-            const chartIdx = tooltip.dataPoints?.[0]?.dataIndex ?? -1;
-            const rawIdx = chartIdx >= 0 ? Math.min(N - 1, chartIdx * step) : -1;
+            // Shared header data (distance + elapsed) — shown only on the first band
+            const chartIdx    = tooltip.dataPoints?.[0]?.dataIndex ?? -1;
+            const rawIdx      = chartIdx >= 0 ? Math.min(N - 1, chartIdx * step) : -1;
             const elapsedSecs = rawIdx >= 0 ? (streamData?.time?.data?.[rawIdx] ?? null) : null;
-            const elapsedStr = elapsedSecs != null ? fmtTime(elapsedSecs) : null;
+            const elapsedStr  = elapsedSecs != null ? fmtTime(elapsedSecs) : null;
+            const distLabel   = tooltip.title?.[0] || '--';
+            const caretX      = tooltip.caretX;
 
-            const distLabel = tooltip.title?.[0] || '--';
-            const header = `<div style="color:#888580;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:5px;">${distLabel} km${elapsedStr ? ` · ${elapsedStr}` : ''}</div>`;
-
-            const lines = (tooltip.dataPoints || []).map(dp => {
-              const bandY = dp.parsed.y; if (bandY == null) return '';
+            (tooltip.dataPoints || []).forEach((dp, i) => {
               const ds = dp.dataset;
-              // Use stored raw value — scale is non-linear so denormalisation would be inaccurate
               const actualV = ds._rawVals?.[dp.dataIndex];
-              if (actualV == null) return '';
+              if (actualV == null) return;
+
+              // Get or create a dedicated tooltip element for this band
+              let el = wrap.querySelector(`.chart-ext-tooltip[data-band="${i}"]`);
+              if (!el) {
+                el = document.createElement('div');
+                el.className = 'chart-ext-tooltip';
+                el.dataset.band = String(i);
+                wrap.appendChild(el);
+              }
+
+              // Format value
               const unit = ds._unit || '';
+              let valStr;
               if (ds._reversed && unit === '/km') {
                 const m = Math.floor(actualV), s = Math.round((actualV - m) * 60);
-                return `<div style="color:${ds.borderColor};margin-top:3px;">${ds.label}: ${m}:${String(s).padStart(2,'0')} /km</div>`;
+                valStr = `${m}:${String(s).padStart(2,'0')} /km`;
+              } else {
+                valStr = (unit === 'bpm' || unit === 'spm' || unit === 'W')
+                  ? Math.round(actualV) + ' ' + unit
+                  : actualV.toFixed(1) + ' ' + unit;
               }
-              const disp = (unit === 'bpm' || unit === 'spm' || unit === 'W')
-                ? Math.round(actualV) + ' ' + unit
-                : actualV.toFixed(1) + ' ' + unit;
-              return `<div style="color:${ds.borderColor};margin-top:3px;">${ds.label}: ${disp}</div>`;
-            }).filter(Boolean).join('');
 
-            el.innerHTML = header + lines;
-            el.style.opacity = '1';
-            const x = tooltip.caretX + 14;
-            const maxL = wrap.offsetWidth - el.offsetWidth - 8;
-            el.style.left = Math.min(Math.max(8, x), Math.max(8, maxL)) + 'px';
+              // Distance + elapsed header on the first (topmost) band only
+              const headerHTML = i === 0
+                ? `<div style="color:#888580;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.08);">${distLabel} km${elapsedStr ? ` · ${elapsedStr}` : ''}</div>`
+                : '';
+              el.innerHTML = headerHTML + `<span style="color:${ds.borderColor};">${ds.label}: ${valStr}</span>`;
+              el.style.opacity = '1';
+
+              // X: follow cursor, flip to left side if near right edge
+              const elW = el.offsetWidth || 110;
+              const x   = caretX + 14;
+              el.style.left = Math.min(Math.max(8, x), Math.max(8, wrap.offsetWidth - elW - 8)) + 'px';
+
+              // Y: vertically centred within this metric's swim-lane band
+              const bIdx         = ds._bandIdx;
+              const canvasTop    = chart.canvas.offsetTop;
+              const bandTopPx    = canvasTop + chart.scales.y.getPixelForValue(bandStarts[bIdx] + bandWeights[bIdx]);
+              const bandBottomPx = canvasTop + chart.scales.y.getPixelForValue(bandStarts[bIdx]);
+              el.style.top       = Math.round((bandTopPx + bandBottomPx) / 2) + 'px';
+              // translateY(-50%) is set in CSS so the element centres on that Y
+            });
+
+            // Hide any leftover tooltips from bands that are no longer active
+            wrap.querySelectorAll('.chart-ext-tooltip').forEach(el => {
+              if (parseInt(el.dataset.band ?? '0') >= (tooltip.dataPoints?.length ?? 0)) {
+                el.style.opacity = '0';
+              }
+            });
           }
         }
       },
