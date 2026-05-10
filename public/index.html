@@ -342,6 +342,73 @@
     .tl-chart-wrap { height: 260px; }
   }
 
+  /* ─── INSIGHTS PAGE ─── */
+  #insights-page { height: 100%; overflow-y: auto; }
+  .ins-inner { max-width: 960px; margin: 0 auto; padding: 40px; box-sizing: border-box; }
+  .ins-title { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .ins-sub { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 32px; }
+  .ins-hero {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px 20px 32px; text-align: center;
+    margin-bottom: 24px; position: relative; overflow: hidden;
+  }
+  .ins-hero::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--whoop), rgba(6,182,212,0.15));
+  }
+  .ins-hero-lbl {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--faint); font-family: var(--mono); margin-bottom: 16px;
+  }
+  .ins-r-val { font-size: 60px; font-weight: 800; letter-spacing: -0.06em; line-height: 1; margin-bottom: 10px; }
+  .ins-r-desc { font-size: 14px; color: var(--muted); font-family: var(--mono); margin-bottom: 6px; }
+  .ins-r-n { font-size: 11px; color: var(--faint); font-family: var(--mono); }
+  .ins-filter-row { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .ins-filter-btn {
+    font-family: var(--mono); font-size: 11px; padding: 4px 12px;
+    border-radius: 5px; border: 1px solid var(--border2);
+    background: none; color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .ins-filter-btn:hover { border-color: var(--whoop-glow); color: var(--text); }
+  .ins-filter-btn.active { background: var(--whoop); border-color: var(--whoop); color: white; }
+  .ins-chart-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; height: 400px;
+    margin-bottom: 14px; box-sizing: border-box; position: relative;
+  }
+  .ins-legend { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 24px; }
+  .ins-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .ins-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .ins-trend-line { width: 18px; height: 0; border-top: 2px dashed rgba(252,76,2,0.75); display: inline-block; vertical-align: middle; margin-right: 2px; }
+  .ins-bands-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .ins-band-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 16px; text-align: center;
+  }
+  .ins-band-zone { font-size: 10px; font-weight: 700; font-family: var(--mono); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 10px; }
+  .ins-band-val { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; }
+  .ins-band-n { font-size: 11px; color: var(--faint); font-family: var(--mono); }
+  .ins-insight-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 13px; color: var(--muted); line-height: 1.75; margin-bottom: 16px;
+  }
+  .ins-insight-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .ins-note {
+    font-size: 11px; color: var(--faint); font-family: var(--mono); line-height: 1.7;
+    padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .ins-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; gap: 14px; text-align: center; padding: 40px;
+  }
+  @media (max-width: 767px) {
+    .ins-inner { padding: 20px 14px; }
+    .ins-r-val { font-size: 42px; }
+    .ins-chart-wrap { height: 280px; }
+  }
+
   /* ─── CONNECTIONS PAGE ─── */
   .connections-page {
     padding: 48px 40px;
@@ -1059,6 +1126,7 @@
       <button class="nav-tab active" data-page="activities" onclick="showPage('activities')">Activities</button>
       <button class="nav-tab" data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
       <button class="nav-tab" data-page="training" onclick="showPage('training')">Training Load</button>
+      <button class="nav-tab" data-page="insights" onclick="showPage('insights')">Insights</button>
       <button class="nav-tab" data-page="prboard" onclick="showPage('prboard')">PR Board</button>
       <button class="nav-tab" data-page="connections" onclick="showPage('connections')">Connections</button>
     </nav>
@@ -1185,6 +1253,9 @@
     <!-- ACTIVITY DETAIL (hidden until an activity is selected) -->
     <div class="empty-state" id="empty-state" style="display:none;"><div class="empty-icon">👟</div><p>Select a run from the sidebar</p></div>
     <div id="detail" style="display:none;"></div>
+
+    <!-- INSIGHTS PAGE -->
+    <div id="insights-page" style="display:none;"></div>
 
     <!-- TRAINING LOAD PAGE -->
     <div id="training-page" style="display:none;height:100%;overflow-y:auto;"></div>
@@ -2086,17 +2157,19 @@ function showPage(page) {
   const emptyState = document.getElementById('empty-state');
   const connPage   = document.getElementById('connections-page');
 
-  const trainPage = document.getElementById('training-page');
-  const prPage    = document.getElementById('pr-board-page');
+  const trainPage    = document.getElementById('training-page');
+  const prPage       = document.getElementById('pr-board-page');
+  const insightsPage = document.getElementById('insights-page');
 
   // Hide everything
-  feed.style.display        = 'none';
-  detail.style.display      = 'none';
-  emptyState.style.display  = 'none';
-  connPage.style.display    = 'none';
-  trainPage.style.display   = 'none';
-  prPage.style.display      = 'none';
-  sidebar.style.display     = 'none';
+  feed.style.display          = 'none';
+  detail.style.display        = 'none';
+  emptyState.style.display    = 'none';
+  connPage.style.display      = 'none';
+  trainPage.style.display     = 'none';
+  prPage.style.display        = 'none';
+  insightsPage.style.display  = 'none';
+  sidebar.style.display       = 'none';
   shell.classList.remove('sidebar-open');
   document.getElementById('copy-btn').style.display = 'none';
 
@@ -2113,6 +2186,9 @@ function showPage(page) {
     } else {
       emptyState.style.display = 'flex';
     }
+  } else if (page === 'insights') {
+    insightsPage.style.display = 'block';
+    renderInsightsPage();
   } else if (page === 'prboard') {
     prPage.style.display = 'block';
     renderPRBoard();
@@ -2123,6 +2199,356 @@ function showPage(page) {
     connPage.style.display = 'block';
     renderConnectionsPage();
   }
+}
+
+// ─── INSIGHTS: WHOOP × PERFORMANCE ───
+let whoopRecoveryHistory = null;
+let insightsChart        = null;
+let insightsFilter       = 'all';
+let insightsPairs        = [];
+
+const WHOOP_HISTORY_CACHE_KEY = 'synorra_whoop_hist_v1';
+
+function loadWhoopHistCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(WHOOP_HISTORY_CACHE_KEY) || 'null');
+    if (c?.records && Date.now() - c.ts < 3_600_000) return c.records;
+  } catch {}
+  return null;
+}
+function saveWhoopHistCache(records) {
+  try { localStorage.setItem(WHOOP_HISTORY_CACHE_KEY, JSON.stringify({ records, ts: Date.now() })); } catch {}
+}
+function clearWhoopHistCache() {
+  try { localStorage.removeItem(WHOOP_HISTORY_CACHE_KEY); } catch {}
+  whoopRecoveryHistory = null;
+}
+
+async function fetchWhoopRecoveryHistory() {
+  if (whoopRecoveryHistory) return whoopRecoveryHistory;
+  const cached = loadWhoopHistCache();
+  if (cached) { whoopRecoveryHistory = cached; return cached; }
+
+  const tok = getWhoopToken();
+  if (!tok) return null;
+
+  const all = [];
+  let nextToken = null;
+  const BASE = 'https://api.prod.whoop.com/developer/v1/recovery';
+
+  for (let page = 0; page < 12; page++) {
+    const url = nextToken ? `${BASE}?limit=25&nextToken=${encodeURIComponent(nextToken)}` : `${BASE}?limit=25`;
+    let resp;
+    try {
+      resp = await fetch(url, { headers: { 'Authorization': `Bearer ${tok.access_token}` } });
+    } catch {
+      break; // CORS or network error
+    }
+    if (!resp.ok) break;
+    const data = await resp.json();
+    const recs = (data.records || []).filter(r => r.score?.recovery_score > 0 && r.score_state !== 'UNSCORABLE');
+    all.push(...recs);
+    nextToken = data.next_token;
+    if (!nextToken || recs.length < 25) break;
+  }
+
+  if (all.length) {
+    whoopRecoveryHistory = all;
+    saveWhoopHistCache(all);
+  }
+  return all.length ? all : null;
+}
+
+function matchRunsWithRecovery(recoveryRecords) {
+  const byDate = {};
+  recoveryRecords.forEach(r => {
+    if (!r.created_at) return;
+    const date = r.created_at.slice(0, 10);
+    // keep highest-confidence record per day
+    if (!byDate[date] || r.score.recovery_score > byDate[date].score) {
+      byDate[date] = { score: r.score.recovery_score, hrv: r.score.hrv_rmssd_milli, rhr: r.score.resting_heart_rate };
+    }
+  });
+
+  return activities
+    .filter(a => a.average_heartrate > 0 && a.average_speed > 0 && a.distance >= 2000)
+    .map(a => {
+      const date = a.start_date_local.slice(0, 10);
+      const rec  = byDate[date];
+      if (!rec) return null;
+      // HR Efficiency: higher = faster per unit of heart effort
+      const eff  = (a.average_speed / a.average_heartrate) * 1000;
+      return { date, recovery: rec.score, hrv: rec.hrv, rhr: rec.rhr, eff: +eff.toFixed(2), type: runTypeCache[a.id] || 'easy', activity: a };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.recovery - b.recovery);
+}
+
+function pearsonR(xs, ys) {
+  const n = xs.length;
+  if (n < 3) return null;
+  const mx = xs.reduce((s, v) => s + v, 0) / n;
+  const my = ys.reduce((s, v) => s + v, 0) / n;
+  const num = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+  const den = Math.sqrt(xs.reduce((s, x) => s + (x - mx) ** 2, 0) * ys.reduce((s, y) => s + (y - my) ** 2, 0));
+  return den === 0 ? 0 : +(num / den).toFixed(3);
+}
+
+function linReg(xs, ys) {
+  const n = xs.length, mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
+  const slope = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+  return { slope, intercept: my - slope * mx };
+}
+
+function rColor(r) {
+  if (r === null) return 'var(--muted)';
+  if (r >= 0.4)  return '#4ade80';
+  if (r >= 0.2)  return '#fbbf24';
+  if (r <= -0.4) return '#f87171';
+  if (r <= -0.2) return '#fb923c';
+  return 'var(--muted)';
+}
+
+function rLabel(r) {
+  if (r === null) return 'Insufficient data';
+  const a = Math.abs(r), d = r >= 0 ? 'positive' : 'negative';
+  if (a >= 0.7) return `Strong ${d} correlation`;
+  if (a >= 0.4) return `Moderate ${d} correlation`;
+  if (a >= 0.2) return `Weak ${d} correlation`;
+  return 'No significant correlation';
+}
+
+function recDotColor(score, alpha = 0.85) {
+  if (score >= 67) return `rgba(74,222,128,${alpha})`;
+  if (score >= 34) return `rgba(251,191,36,${alpha})`;
+  return `rgba(248,113,113,${alpha})`;
+}
+
+function bandStats(pairs) {
+  const g = pairs.filter(p => p.recovery >= 67);
+  const y = pairs.filter(p => p.recovery >= 34 && p.recovery < 67);
+  const r = pairs.filter(p => p.recovery < 34);
+  const avg = arr => arr.length ? +(arr.reduce((s, p) => s + p.eff, 0) / arr.length).toFixed(1) : null;
+  return { green: { avg: avg(g), n: g.length }, yellow: { avg: avg(y), n: y.length }, red: { avg: avg(r), n: r.length } };
+}
+
+function insightText(pairs, r, bands) {
+  const n = pairs.length;
+  if (n < 5) return `Only ${n} matched run${n !== 1 ? 's' : ''} so far. Keep logging with Whoop connected — insights improve with every run.`;
+  const { green, red } = bands;
+  if (r === null || Math.abs(r) < 0.15) return `Across ${n} matched runs, no clear pattern has emerged yet. This may mean you regulate your effort regardless of recovery state, or more data is needed to detect a signal.`;
+  if (r >= 0.15 && green.avg && red.avg) {
+    const diff = ((green.avg - red.avg) / red.avg * 100).toFixed(1);
+    if (green.n > 0 && red.n > 0) return `On green recovery days (≥ 67), your HR efficiency averages <strong>${green.avg}</strong> — <strong>${diff}% better</strong> than on red days (${red.avg}). Your body clearly responds to the recovery signal. Consider scheduling harder sessions when you wake up green.`;
+    return `A positive trend is emerging across ${n} matched runs. Your performance tends to be better when recovery is higher.`;
+  }
+  if (r <= -0.2) return `Interestingly, a negative correlation is appearing — you may push harder on lower recovery days, or harder sessions (which depress recovery) are clustering here. Worth watching as more data accumulates.`;
+  return `A weak trend is building across ${n} matched runs. Keep logging — the picture will sharpen over time.`;
+}
+
+function setInsightFilter(filter, btn) {
+  insightsFilter = filter;
+  document.querySelectorAll('.ins-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildInsightsChart();
+}
+
+function buildInsightsChart() {
+  const pairs = insightsFilter === 'all' ? insightsPairs : insightsPairs.filter(p => p.type === insightsFilter);
+  const canvas = document.getElementById('ins-canvas');
+  if (!canvas) return;
+  if (insightsChart) { insightsChart.destroy(); insightsChart = null; }
+
+  if (pairs.length < 3) {
+    canvas.parentElement.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--faint);font-family:var(--mono);font-size:12px;text-align:center;">Not enough data for this filter (${pairs.length} run${pairs.length !== 1 ? 's' : ''})</div>`;
+    updateInsightHero([], null);
+    return;
+  }
+
+  const xs = pairs.map(p => p.recovery), ys = pairs.map(p => p.eff);
+  const r   = pearsonR(xs, ys);
+  const reg = linReg(xs, ys);
+  updateInsightHero(pairs, r);
+
+  const trendPts = [0, 100].map(x => ({ x, y: +(reg.slope * x + reg.intercept).toFixed(2) }));
+
+  insightsChart = new Chart(canvas, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Runs',
+          data: pairs.map(p => ({ x: p.recovery, y: p.eff, _p: p })),
+          pointRadius: 7, pointHoverRadius: 11,
+          pointBackgroundColor: pairs.map(p => recDotColor(p.recovery, 0.8)),
+          pointBorderColor:     pairs.map(p => recDotColor(p.recovery, 1.0)),
+          pointBorderWidth: 1.5,
+          order: 2
+        },
+        {
+          label: 'Trend',
+          data: trendPts, type: 'line',
+          borderColor: 'rgba(252,76,2,0.65)', borderWidth: 2,
+          borderDash: [5, 4], pointRadius: 0, fill: false, tension: 0, order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      onClick: (_, els) => {
+        if (!els.length) return;
+        const p = pairs[els[0].index];
+        if (p?.activity?.id) selectActivity(p.activity.id);
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e2021', borderColor: 'rgba(255,255,255,0.12)', borderWidth: 1,
+          titleFont: { family: 'DM Mono', size: 11 }, bodyFont: { family: 'DM Mono', size: 11 },
+          callbacks: {
+            title: items => { const p = pairs[items[0].dataIndex]; return p ? new Date(p.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : ''; },
+            label: item => {
+              const p = pairs[item.dataIndex];
+              if (!p) return '';
+              const rt = RUN_TYPES[p.type] || RUN_TYPES.easy;
+              return [
+                ` ${p.activity.name || 'Run'}`,
+                ` Recovery: ${p.recovery}%`,
+                ` HR Efficiency: ${p.eff}`,
+                ` ${rt.label} · ${((p.activity.distance||0)/1000).toFixed(1)}km`,
+                ` Click to open run`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 100,
+          title: { display: true, text: 'Whoop Recovery Score', color: 'rgba(136,133,128,0.8)', font: { family: 'DM Mono', size: 11 } },
+          ticks: { color: 'rgba(136,133,128,0.8)', font: { family: 'DM Mono', size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        },
+        y: {
+          title: { display: true, text: 'HR Efficiency  (higher = better)', color: 'rgba(136,133,128,0.8)', font: { family: 'DM Mono', size: 11 } },
+          ticks: { color: 'rgba(136,133,128,0.8)', font: { family: 'DM Mono', size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        }
+      }
+    }
+  });
+}
+
+function updateInsightHero(pairs, r) {
+  const rEl   = document.getElementById('ins-r-val');
+  const descEl = document.getElementById('ins-r-desc');
+  const nEl   = document.getElementById('ins-r-n');
+  if (rEl)   { rEl.textContent = r !== null ? `r = ${r.toFixed(2)}` : '—'; rEl.style.color = rColor(r); }
+  if (descEl) descEl.textContent = rLabel(r);
+  if (nEl)   nEl.textContent = `${pairs.length} run${pairs.length !== 1 ? 's' : ''} matched`;
+}
+
+async function renderInsightsPage() {
+  const el = document.getElementById('insights-page');
+  if (!el) return;
+
+  if (!getWhoopToken()) {
+    el.innerHTML = `<div class="ins-empty">
+      <div style="font-size:36px;">📡</div>
+      <div style="font-size:16px;font-weight:700;letter-spacing:-0.02em;">Connect Whoop to unlock insights</div>
+      <div style="font-size:13px;color:var(--muted);font-family:var(--mono);max-width:400px;line-height:1.7;">Recovery vs performance correlation requires your Whoop recovery data. Connect your Whoop on the Connections page.</div>
+      <button onclick="showPage('connections')" style="margin-top:8px;background:var(--whoop);color:white;border:none;padding:10px 24px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">Go to Connections</button>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="ins-empty"><div class="spinner" style="border-top-color:var(--whoop);"></div><div style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:12px;">Fetching Whoop recovery history…</div></div>`;
+
+  const recovery = await fetchWhoopRecoveryHistory();
+
+  if (!recovery || !recovery.length) {
+    el.innerHTML = `<div class="ins-empty">
+      <div style="font-size:32px;">😴</div>
+      <div style="font-size:15px;font-weight:600;">No Whoop recovery data found</div>
+      <div style="font-size:12px;color:var(--muted);font-family:var(--mono);max-width:420px;line-height:1.7;">This may be a CORS restriction from calling Whoop directly from the browser. If you see errors in the console, a backend proxy may be needed.</div>
+    </div>`;
+    return;
+  }
+
+  insightsPairs = matchRunsWithRecovery(recovery);
+
+  if (!insightsPairs.length) {
+    el.innerHTML = `<div class="ins-empty">
+      <div style="font-size:32px;">🔗</div>
+      <div style="font-size:15px;font-weight:600;">No matched pairs yet</div>
+      <div style="font-size:12px;color:var(--muted);font-family:var(--mono);max-width:420px;line-height:1.7;">Your Strava runs and Whoop recovery records don't overlap in date yet, or the dates don't align. Make sure Whoop is syncing regularly.</div>
+    </div>`;
+    return;
+  }
+
+  const allTypes = Object.entries(
+    insightsPairs.reduce((m, p) => { m[p.type] = (m[p.type] || 0) + 1; return m; }, {})
+  ).filter(([, n]) => n >= 3);
+
+  const r      = pearsonR(insightsPairs.map(p => p.recovery), insightsPairs.map(p => p.eff));
+  const bands  = bandStats(insightsPairs);
+  const insight = insightText(insightsPairs, r, bands);
+  const earliest = insightsPairs.reduce((a, b) => a.date < b.date ? a : b).date;
+  const fmtDateS = s => new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  const filterBtns = [
+    ['all', 'All runs', insightsPairs.length],
+    ...allTypes.map(([t, n]) => [t, RUN_TYPES[t]?.label || t, n])
+  ].map(([k, lbl, n]) =>
+    `<button class="ins-filter-btn ${k === insightsFilter ? 'active' : ''}" onclick="setInsightFilter('${k}',this)">${lbl} <span style="opacity:0.45;">(${n})</span></button>`
+  ).join('');
+
+  const bandCard = (label, color, band) => `<div class="ins-band-card">
+    <div class="ins-band-zone" style="color:${color};">${label}</div>
+    ${band.avg !== null
+      ? `<div class="ins-band-val" style="color:${color};">${band.avg}</div><div class="ins-band-n">${band.n} run${band.n !== 1 ? 's' : ''}</div>`
+      : `<div class="ins-band-val" style="color:var(--faint);">—</div><div class="ins-band-n">no data</div>`}
+  </div>`;
+
+  el.innerHTML = `<div class="ins-inner">
+    <div class="ins-title">Recovery &amp; Performance</div>
+    <div class="ins-sub">Whoop recovery score vs running efficiency · ${insightsPairs.length} matched runs · since ${fmtDateS(earliest)}</div>
+
+    <div class="ins-hero">
+      <div class="ins-hero-lbl">Pearson Correlation Coefficient</div>
+      <div class="ins-r-val" id="ins-r-val" style="color:${rColor(r)};">${r !== null ? 'r = ' + r.toFixed(2) : '—'}</div>
+      <div class="ins-r-desc" id="ins-r-desc">${rLabel(r)}</div>
+      <div class="ins-r-n" id="ins-r-n">${insightsPairs.length} runs matched with recovery data</div>
+    </div>
+
+    <div class="ins-filter-row">${filterBtns}</div>
+
+    <div class="ins-chart-wrap"><canvas id="ins-canvas"></canvas></div>
+
+    <div class="ins-legend">
+      <div class="ins-legend-item"><span class="ins-dot" style="background:#4ade80;"></span>Green recovery (67–100)</div>
+      <div class="ins-legend-item"><span class="ins-dot" style="background:#fbbf24;"></span>Yellow (34–66)</div>
+      <div class="ins-legend-item"><span class="ins-dot" style="background:#f87171;"></span>Red (0–33)</div>
+      <div class="ins-legend-item"><span class="ins-trend-line"></span>Trend line · click any dot to open that run</div>
+    </div>
+
+    <div class="ins-bands-grid">
+      ${bandCard('🟢 Green days', '#4ade80', bands.green)}
+      ${bandCard('🟡 Yellow days', '#fbbf24', bands.yellow)}
+      ${bandCard('🔴 Red days', '#f87171', bands.red)}
+    </div>
+
+    <div class="ins-insight-box">
+      <div class="ins-insight-icon">💡</div>
+      <div>${insight}</div>
+    </div>
+
+    <div class="ins-note">
+      <strong>HR Efficiency</strong> = average speed ÷ average heart rate × 1000. Higher is better — it means you ran faster relative to your heart's effort that day, a proxy for aerobic readiness. Each dot is one Strava run matched to your Whoop recovery score from the same morning. Click any dot to open that run.
+    </div>
+  </div>`;
+
+  buildInsightsChart();
 }
 
 function renderConnectionsPage() {
@@ -4013,8 +4439,10 @@ function connectWhoop() {
 function promptWhoopDisconnect() {
   if (confirm('Disconnect Whoop from this device?')) {
     clearWhoopToken();
+    clearWhoopHistCache();
     whoopData = null;
     renderConnectionsPage();
+    renderConnStatusBar();
     renderWhoopSection();
   }
 }
