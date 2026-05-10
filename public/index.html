@@ -960,6 +960,16 @@ async function apiFetch(path) {
   if (r.status === 401) { clearToken(); location.reload(); }
   return r.json();
 }
+// Safe variant for non-critical background calls — returns null on any error
+// without clearing the token or reloading. Use this for endpoints that may
+// require scopes we don't have (e.g. /athlete/zones needs profile:read_all).
+async function apiFetchSafe(path) {
+  try {
+    const r = await fetch('https://www.strava.com/api/v3' + path, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
 
 async function fetchActivities() {
   let all = [], page = 1;
@@ -1095,10 +1105,12 @@ async function showApp(athlete) {
     if (!Array.isArray(data)) throw new Error('Could not load activities');
     activities = data;
     applyFilters();
-    // Fetch zones and lifetime stats in background (non-blocking)
+    // Fetch zones and lifetime stats in background (non-blocking).
+    // Uses apiFetchSafe so a 401/403 (e.g. zones needs profile:read_all scope)
+    // does NOT wipe the token or trigger a reload.
     Promise.all([
-      apiFetch('/athlete/zones').catch(() => null),
-      apiFetch('/athlete/stats').catch(() => null)
+      apiFetchSafe('/athlete/zones'),
+      apiFetchSafe('/athlete/stats')
     ]).then(([zonesRes, statsRes]) => {
       if (zonesRes?.heart_rate?.zones?.length >= 5) stravaZones = zonesRes.heart_rate.zones;
       if (statsRes) { athleteStats = statsRes; renderAthleteStats(); }
