@@ -1270,32 +1270,53 @@ function rebuildChart() {
     const [key, cfg] = activeEntries[idx];
     const raw = streamData[cfg.key]?.data || [];
 
-    // Compute robust min/max using 2nd–98th percentiles to suppress outliers
-    // (e.g. a brief stop making pace spike won't crush the rest of the graph)
+    // Piecewise log-compressed scale:
+    // Core (5th–95th pct) maps linearly to the middle 82% of the band — full
+    // granularity for normal variation. Values outside the core compress
+    // logarithmically into the outer 9% each side so outliers (e.g. a walk
+    // pace of 12:00/km) are still visible as a real dip without flattening the rest.
     const vals = [];
     for (let i = 0; i < N; i += step) {
       const v = cfg.xform(raw[i] ?? null);
       if (v != null) vals.push(v);
     }
-    let minV, maxV;
+    let absMin, absMax, coreMin, coreMax;
     if (!vals.length) {
-      minV = 0; maxV = 1;
+      absMin = 0; absMax = 1; coreMin = 0; coreMax = 1;
     } else {
       vals.sort((a, b) => a - b);
       const pct = (p) => vals[Math.min(vals.length - 1, Math.max(0, Math.floor(p * vals.length)))];
-      minV = pct(0.02);
-      maxV = pct(0.98);
-      if (maxV <= minV) { minV = vals[0]; maxV = vals[vals.length - 1]; }
-      if (maxV <= minV) maxV = minV + 1;
+      absMin  = vals[0];
+      absMax  = vals[vals.length - 1];
+      coreMin = pct(0.05);
+      coreMax = pct(0.95);
+      if (coreMax <= coreMin) { coreMin = absMin; coreMax = absMax; }
+      if (coreMax <= coreMin) coreMax = coreMin + 1;
     }
-    const range = maxV - minV;
+    const CORE_FRAC = 0.82; // fraction of band used for core data
+    const EDGE_FRAC = (1 - CORE_FRAC) / 2; // 0.09 each side for outliers
+    const LOG_K = 4; // log compression strength in outlier zones
+    const softNorm = (v) => {
+      if (v <= coreMin) {
+        if (absMin >= coreMin) return EDGE_FRAC;
+        const t = Math.log(1 + Math.min(1, (coreMin - v) / (coreMin - absMin)) * LOG_K) / Math.log(1 + LOG_K);
+        return EDGE_FRAC * (1 - t);
+      } else if (v >= coreMax) {
+        if (absMax <= coreMax) return 1 - EDGE_FRAC;
+        const t = Math.log(1 + Math.min(1, (v - coreMax) / (absMax - coreMax)) * LOG_K) / Math.log(1 + LOG_K);
+        return (1 - EDGE_FRAC) + EDGE_FRAC * t;
+      }
+      return EDGE_FRAC + ((v - coreMin) / (coreMax - coreMin)) * CORE_FRAC;
+    };
 
-    // Normalise into band [idx+PAD, idx+1-PAD]; outliers clamped to band edges
+    // Normalise into band [idx+PAD, idx+1-PAD]; store raw values for tooltip
+    const rawVals = [];
     const data = [];
     for (let i = 0; i < N; i += step) {
       const v = cfg.xform(raw[i] ?? null);
+      rawVals.push(v);
       if (v == null) { data.push(null); continue; }
-      let norm = Math.max(0, Math.min(1, (v - minV) / range)); // clamp outliers
+      let norm = softNorm(v);
       if (cfg.reversed) norm = 1 - norm; // flip so "better" value is higher
       data.push(idx + BAND_PAD + norm * BAND_FILL);
     }
@@ -1308,7 +1329,7 @@ function rebuildChart() {
       yAxisID: 'y', fill: false,
       tension: 0.3, spanGaps: true,
       _unit: cfg.unit, _reversed: cfg.reversed,
-      _minV: minV, _maxV: maxV, _bandIdx: idx
+      _rawVals: rawVals, _bandIdx: idx
     });
   }
 
@@ -1362,11 +1383,9 @@ function rebuildChart() {
             const lines = (tooltip.dataPoints || []).map(dp => {
               const bandY = dp.parsed.y; if (bandY == null) return '';
               const ds = dp.dataset;
-              // Denormalise from band position back to real value
-              let norm = (bandY - ds._bandIdx - BAND_PAD) / BAND_FILL;
-              norm = Math.max(0, Math.min(1, norm));
-              if (ds._reversed) norm = 1 - norm;
-              const actualV = ds._minV + norm * (ds._maxV - ds._minV);
+              // Use stored raw value — scale is non-linear so denormalisation would be inaccurate
+              const actualV = ds._rawVals?.[dp.dataIndex];
+              if (actualV == null) return '';
               const unit = ds._unit || '';
               if (ds._reversed && unit === '/km') {
                 const m = Math.floor(actualV), s = Math.round((actualV - m) * 60);
