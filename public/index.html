@@ -77,28 +77,28 @@
     flex-shrink: 0;
   }
   .activity-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-    gap: 16px;
-    padding: 16px 24px 32px;
+    display: flex; flex-direction: column; gap: 20px;
+    padding: 16px 0 40px;
+    max-width: 820px; width: 100%; margin: 0 auto;
+    box-sizing: border-box;
   }
   .activity-tile {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden; cursor: pointer;
+    border-radius: 14px; overflow: hidden; cursor: pointer;
     transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
   }
   .activity-tile:hover {
     border-color: var(--orange-glow);
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
   }
   .tile-map {
-    width: 100%; height: 170px; background: #0c0e0f;
-    display: flex; align-items: stretch;
+    width: 100%; height: 260px; background: #0c0e0f; overflow: hidden;
+    position: relative;
   }
-  .tile-map svg { width: 100%; height: 100%; display: block; }
+  .tile-map .leaflet-container { background: #0c0e0f; }
   .tile-no-map {
-    width: 100%; height: 170px; background: #0c0e0f;
+    width: 100%; height: 260px; background: #0c0e0f;
     display: flex; align-items: center; justify-content: center;
     color: var(--border2); font-size: 11px; font-family: var(--mono);
   }
@@ -1212,7 +1212,7 @@ async function showApp(athlete) {
 
   updateWhoopBtn();
 
-  document.getElementById('activity-tiles').innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;"><div class="spinner" style="margin:0 auto;"></div></div>`;
+  document.getElementById('activity-tiles').innerHTML = `<div style="padding:60px;text-align:center;"><div class="spinner" style="margin:0 auto;"></div></div>`;
 
   try {
     const data = await fetchActivities();
@@ -1220,6 +1220,7 @@ async function showApp(athlete) {
     activities = data;
     applyFeedFilters();
     applyFilters();
+    handleRoute(); // open directly to an activity if URL is /activity/:id
     // Fetch zones and lifetime stats in background (non-blocking).
     // Uses apiFetchSafe so a 401/403 (e.g. zones needs profile:read_all scope)
     // does NOT wipe the token or trigger a reload.
@@ -1260,30 +1261,65 @@ function renderSidebar(acts) {
 }
 
 // ─── HOME FEED ───
-function polylineTileMap(encoded) {
-  if (!encoded) return null;
+// ── Tile Leaflet maps (lazy-loaded via IntersectionObserver) ──
+let tileMapInstances = {};
+let tileMapObserver  = null;
+
+function destroyTileMaps() {
+  Object.values(tileMapInstances).forEach(m => { try { m.remove(); } catch {} });
+  tileMapInstances = {};
+  if (tileMapObserver) { tileMapObserver.disconnect(); tileMapObserver = null; }
+}
+
+function initTileMaps() {
+  if (tileMapObserver) tileMapObserver.disconnect();
+  tileMapObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el    = entry.target;
+      const tid   = el.dataset.tileId;
+      const enc   = el.dataset.polyline;
+      if (tid && enc && !tileMapInstances[tid]) {
+        initSingleTileMap(el, enc, tid);
+        tileMapObserver.unobserve(el);
+      }
+    });
+  }, { rootMargin: '400px 0px' }); // preload 400px ahead of scroll
+
+  document.querySelectorAll('.tile-map[data-tile-id]').forEach(el => {
+    tileMapObserver.observe(el);
+  });
+}
+
+function initSingleTileMap(container, encoded, tid) {
   const coords = decodePolyline(encoded);
-  if (coords.length < 2) return null;
-  const lats = coords.map(c => c[0]), lngs = coords.map(c => c[1]);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-  const rangeX = maxLng - minLng || 1, rangeY = maxLat - minLat || 1;
-  const W = 400, H = 170, pad = 16;
-  const scale = Math.min((W - pad*2) / rangeX, (H - pad*2) / rangeY);
-  const pts = coords.map(([lat, lng]) =>
-    `${(pad + (lng - minLng) * scale).toFixed(1)},${(H - pad - (lat - minLat) * scale).toFixed(1)}`
-  ).join(' ');
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
-    <rect width="${W}" height="${H}" fill="#0c0e0f"/>
-    <polyline points="${pts}" fill="none" stroke="rgba(252,76,2,0.25)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="${pts}" fill="none" stroke="#fc4c02" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`;
+  if (coords.length < 2) return;
+
+  const map = L.map(container, {
+    zoomControl: false, attributionControl: false,
+    dragging: false, touchZoom: false,
+    scrollWheelZoom: false, doubleClickZoom: false,
+    keyboard: false, tap: false
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, subdomains: 'abcd'
+  }).addTo(map);
+
+  const latlngs = coords.map(([lat, lng]) => [lat, lng]);
+  // Glow layer (underneath)
+  L.polyline(latlngs, { color: '#fc4c02', weight: 10, opacity: 0.18, smoothFactor: 1 }).addTo(map);
+  // Main route
+  const line = L.polyline(latlngs, { color: '#fc4c02', weight: 3.5, opacity: 0.95, smoothFactor: 1 }).addTo(map);
+
+  map.fitBounds(line.getBounds(), { padding: [24, 24], maxZoom: 16 });
+  tileMapInstances[tid] = map;
 }
 
 function buildActivityTile(a) {
-  const mapSvg = polylineTileMap(a.map?.summary_polyline);
-  const mapEl  = mapSvg
-    ? `<div class="tile-map">${mapSvg}</div>`
+  const enc = a.map?.summary_polyline || '';
+  const mapEl = enc
+    ? `<div class="tile-map" id="tilemap-${a.id}" data-tile-id="${a.id}" data-polyline="${enc}"></div>`
     : `<div class="tile-no-map">No route data</div>`;
   const workoutTypes = { 0:'Run', 1:'Race', 2:'Long run', 3:'Workout', 11:'Run' };
   const wtype = workoutTypes[a.workout_type] || 'Run';
@@ -1309,13 +1345,15 @@ function buildActivityTile(a) {
 }
 
 function renderHomeFeed(acts) {
+  destroyTileMaps();
   const grid  = document.getElementById('activity-tiles');
   const count = document.getElementById('feed-count');
   if (!grid) return;
   if (!acts.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);font-size:13px;">No runs match your filters</div>`;
+    grid.innerHTML = `<div style="padding:60px;text-align:center;color:var(--muted);font-size:13px;">No runs match your filters</div>`;
   } else {
     grid.innerHTML = acts.map(a => buildActivityTile(a)).join('');
+    initTileMaps();
   }
   if (count) count.textContent = `${acts.length} of ${activities.length} runs`;
 }
@@ -1417,16 +1455,30 @@ function clearFilters() {
   applyFilters();
 }
 
-function goBackToFeed() {
+function goBackToFeed(pushHistory = true) {
+  if (pushHistory) history.pushState({}, '', '/');
   document.getElementById('home-feed').style.display = 'flex';
   document.getElementById('detail').style.display = 'none';
   document.getElementById('sidebar').style.display = 'none';
   document.querySelector('.shell').classList.remove('sidebar-open');
   currentActivity = null; streamData = null; detailedActivity = null;
+  // Re-validate Leaflet map sizes after the feed becomes visible again
+  setTimeout(() => Object.values(tileMapInstances).forEach(m => m.invalidateSize()), 80);
 }
 
+function handleRoute() {
+  const m = window.location.pathname.match(/^\/activity\/(\d+)$/);
+  if (m && token) selectActivity(parseInt(m[1]), false);
+}
+
+window.addEventListener('popstate', e => {
+  if (e.state?.activityId) selectActivity(e.state.activityId, false);
+  else goBackToFeed(false);
+});
+
 // ─── SELECT ACTIVITY ───
-async function selectActivity(id) {
+async function selectActivity(id, pushHistory = true) {
+  if (pushHistory) history.pushState({ activityId: id }, '', `/activity/${id}`);
   // Switch to activity-view layout
   document.querySelector('.shell').classList.add('sidebar-open');
   document.getElementById('home-feed').style.display = 'none';
