@@ -45,7 +45,7 @@
   /* ─── LAYOUT ─── */
   .shell {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 360px 1fr;
     grid-template-rows: 56px 1fr;
     height: 100vh;
     overflow: hidden;
@@ -149,12 +149,17 @@
   .sidebar-count { font-size: 10px; color: var(--faint); font-family: var(--mono); padding: 6px 20px 4px; }
 
   .activity-item {
-    padding: 14px 20px;
+    padding: 12px 16px;
     cursor: pointer;
     border-left: 2px solid transparent;
     transition: all 0.15s;
     border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
+  .act-item-body { flex: 1; min-width: 0; }
+  .chip-pr { border-color: var(--orange-glow); color: var(--orange); background: rgba(252,76,2,0.1); }
   .activity-item:hover { background: var(--surface2); border-left-color: var(--orange-glow); }
   .activity-item.active { background: var(--surface2); border-left-color: var(--orange); }
 
@@ -488,6 +493,9 @@
   .leaflet-tile-pane { filter: grayscale(0.8) brightness(0.5) contrast(1.1); }
   .leaflet-control-attribution { display: none !important; }
 
+  .split-tab-btn { font-family:var(--mono);font-size:9px;font-weight:600;background:none;border:1px solid var(--border);color:var(--faint);border-radius:4px;padding:2px 8px;cursor:pointer;transition:all 0.15s; }
+  .split-tab-btn.active,.split-tab-btn:hover { border-color:var(--orange-glow);color:var(--orange); }
+
   /* ─── WHOOP ─── */
   .btn-whoop {
     display: inline-flex; align-items: center; gap: 7px;
@@ -591,6 +599,7 @@
     <div class="empty-state" id="empty-state">
       <div class="empty-icon">↑</div>
       <p>Select a run to analyse</p>
+      <div id="athlete-stats" style="width:100%;max-width:560px;margin-top:20px;text-align:left;"></div>
     </div>
     <div id="detail" style="display:none;"></div>
   </div>
@@ -611,6 +620,9 @@ let currentActivity = null;
 let activities = [];
 let whoopData = null;
 let whoopConnectError = null;
+let detailedActivity = null;
+let stravaZones = null;
+let athleteStats = null;
 
 let chartSplitActiveKm = null;
 let pinnedSplitKm = null;
@@ -964,6 +976,32 @@ async function fetchActivities() {
   return all;
 }
 
+function decodePolyline(str) {
+  let i = 0, lat = 0, lng = 0; const out = [];
+  while (i < str.length) {
+    let b, shift = 0, result = 0;
+    do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 32);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1); shift = result = 0;
+    do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 32);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    out.push([lat / 1e5, lng / 1e5]);
+  }
+  return out;
+}
+function polylineThumb(encoded, w, h) {
+  if (!encoded) return `<div style="width:${w}px;height:${h}px;flex-shrink:0;"></div>`;
+  const coords = decodePolyline(encoded);
+  if (coords.length < 2) return `<div style="width:${w}px;height:${h}px;flex-shrink:0;"></div>`;
+  const lats = coords.map(c => c[0]), lngs = coords.map(c => c[1]);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const rangeX = maxLng - minLng || 1, rangeY = maxLat - minLat || 1;
+  const pad = 3, scale = Math.min((w - pad*2) / rangeX, (h - pad*2) / rangeY);
+  const pts = coords.map(([lat, lng]) =>
+    `${(pad + (lng - minLng) * scale).toFixed(1)},${(h - pad - (lat - minLat) * scale).toFixed(1)}`
+  ).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:${w}px;height:${h}px;flex-shrink:0;opacity:0.75;" xmlns="http://www.w3.org/2000/svg"><polyline points="${pts}" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
 async function fetchStreams(id) {
   return apiFetch(`/activities/${id}/streams?keys=time,distance,velocity_smooth,heartrate,altitude,cadence,grade_smooth,watts,moving,temp,latlng&key_by_type=true`);
 }
@@ -1057,6 +1095,14 @@ async function showApp(athlete) {
     if (!Array.isArray(data)) throw new Error('Could not load activities');
     activities = data;
     applyFilters();
+    // Fetch zones and lifetime stats in background (non-blocking)
+    Promise.all([
+      apiFetch('/athlete/zones').catch(() => null),
+      apiFetch('/athlete/stats').catch(() => null)
+    ]).then(([zonesRes, statsRes]) => {
+      if (zonesRes?.heart_rate?.zones?.length >= 5) stravaZones = zonesRes.heart_rate.zones;
+      if (statsRes) { athleteStats = statsRes; renderAthleteStats(); }
+    });
     const count = document.getElementById('sidebar-count');
     if (count) count.textContent = `${activities.length} runs loaded`;
   } catch(e) {
@@ -1071,15 +1117,39 @@ function renderSidebar(acts) {
   if (!acts.length) { document.getElementById('activity-list').innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;">No runs found</div>'; return; }
   document.getElementById('activity-list').innerHTML = acts.map(a => `
     <div class="activity-item" id="si-${a.id}" onclick="selectActivity(${a.id})">
-      <div class="act-name">${a.name}</div>
-      <div class="act-date">${fmtDate(a.start_date_local)}</div>
-      <div class="act-chips">
-        <span class="chip">${fmtDist(a.distance)}</span>
-        <span class="chip">${fmtPace(a.average_speed)}/km</span>
-        ${a.average_heartrate ? `<span class="chip">${Math.round(a.average_heartrate)}bpm</span>` : ''}
+      ${polylineThumb(a.map?.summary_polyline, 46, 46)}
+      <div class="act-item-body">
+        <div class="act-name">${a.name}</div>
+        <div class="act-date">${fmtDate(a.start_date_local)}</div>
+        <div class="act-chips">
+          <span class="chip">${fmtDist(a.distance)}</span>
+          <span class="chip">${fmtPace(a.average_speed)}/km</span>
+          ${a.average_heartrate ? `<span class="chip">${Math.round(a.average_heartrate)}bpm</span>` : ''}
+          ${a.pr_count > 0 ? `<span class="chip chip-pr">${a.pr_count} PR${a.pr_count > 1 ? 's' : ''}</span>` : ''}
+        </div>
       </div>
     </div>
   `).join('');
+}
+
+function renderAthleteStats() {
+  if (!athleteStats) return;
+  const el = document.getElementById('athlete-stats');
+  if (!el) return;
+  const secs = [
+    { label: 'All time',     d: athleteStats.all_run_totals },
+    { label: 'Year to date', d: athleteStats.ytd_run_totals },
+    { label: 'Last 4 weeks', d: athleteStats.recent_run_totals }
+  ];
+  el.innerHTML = `<div style="font-size:10px;font-weight:600;letter-spacing:0.08em;color:var(--faint);text-transform:uppercase;margin-bottom:12px;font-family:var(--mono);">Your running</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+    ${secs.map(s => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;">
+      <div style="font-size:9px;color:var(--faint);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">${s.label}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);font-family:var(--mono);">${Math.round((s.d?.distance||0)/1000).toLocaleString()} km</div>
+      <div style="font-size:10px;color:var(--muted);margin:2px 0 6px;">${(s.d?.count||0)} runs</div>
+      <div style="font-size:12px;color:var(--muted);font-family:var(--mono);">${fmtTime(s.d?.moving_time||0)}</div>
+    </div>`).join('')}
+  </div>`;
 }
 
 // ─── FILTERS ───
@@ -1144,7 +1214,10 @@ async function selectActivity(id) {
   detail.innerHTML = `<div class="loading-state"><div class="spinner"></div> Loading stream data…</div>`;
 
   try {
-    streamData = await fetchStreams(id);
+    [streamData, detailedActivity] = await Promise.all([
+      fetchStreams(id),
+      apiFetch(`/activities/${id}`)
+    ]);
     // Compute GAP (Grade Adjusted Pace) via Minetti et al. energy-cost model
     const _vel = streamData.velocity_smooth?.data || [];
     const _grd = streamData.grade_smooth?.data   || [];
@@ -1196,18 +1269,21 @@ function renderDetail(act, streams) {
     <div class="detail">
       <div class="detail-header">
         <div class="detail-title">${act.name}<span class="type-badge">${wtype}</span></div>
-        <div class="detail-meta">${fmtDate(act.start_date_local)} · ${act.location_city || ''}</div>
+        <div class="detail-meta">${fmtDate(act.start_date_local)}${act.location_city ? ' · ' + act.location_city : ''}${detailedActivity?.gear?.name ? ' · ' + detailedActivity.gear.name : ''}${detailedActivity?.device_name ? ' · ' + detailedActivity.device_name : ''}</div>
+        ${act.pr_count > 0 ? `<div style="display:inline-flex;align-items:center;gap:5px;background:rgba(252,76,2,0.1);border:1px solid var(--orange-glow);border-radius:6px;padding:3px 10px;font-size:11px;font-family:var(--mono);color:var(--orange);margin-top:6px;">🏅 ${act.pr_count} PR${act.pr_count > 1 ? 's' : ''} on this run</div>` : ''}
       </div>
 
       <div class="metrics-grid">
         <div class="metric"><div class="metric-val">${fmtDist(act.distance)}</div><div class="metric-lbl">Distance</div></div>
         <div class="metric"><div class="metric-val">${fmtTime(act.moving_time)}</div><div class="metric-lbl">Moving time</div></div>
         <div class="metric highlight"><div class="metric-val">${fmtPace(act.average_speed)}</div><div class="metric-lbl">Avg pace /km</div></div>
+        ${avgHR ? `<div class="metric highlight"><div class="metric-val">${avgHR}</div><div class="metric-lbl">Avg HR</div></div>` : ''}
+        ${act.elapsed_time ? `<div class="metric"><div class="metric-val">${fmtTime(act.elapsed_time)}</div><div class="metric-lbl">Elapsed time</div></div>` : ''}
         <div class="metric"><div class="metric-val">${startTime}</div><div class="metric-lbl">Start time</div></div>
         <div class="metric"><div class="metric-val">${endTime}</div><div class="metric-lbl">End time</div></div>
-        <div class="metric"><div class="metric-val">${avgHR || '--'}</div><div class="metric-lbl">Avg HR</div></div>
         <div class="metric"><div class="metric-val">${maxHR || '--'}</div><div class="metric-lbl">Max HR</div></div>
         <div class="metric"><div class="metric-val">${elevGain}m</div><div class="metric-lbl">Elev gain</div></div>
+        ${detailedActivity?.calories ? `<div class="metric"><div class="metric-val">${detailedActivity.calories}</div><div class="metric-lbl">Calories</div></div>` : ''}
         ${act.suffer_score ? `<div class="metric"><div class="metric-val">${act.suffer_score}</div><div class="metric-lbl">Suffer score</div></div>` : ''}
         ${avgCad ? `<div class="metric"><div class="metric-val">${avgCad}</div><div class="metric-lbl">Avg cadence</div></div>` : ''}
       </div>
@@ -1241,24 +1317,14 @@ function renderDetail(act, streams) {
         <div class="map-splits-layout">
           ${splits.length ? `
           <div class="splits-panel">
-            <div class="splits-panel-head">Per-km splits</div>
-            <table class="splits-table">
-              <thead><tr>
-                <th>KM</th><th>Pace</th><th>HR</th><th>Elev</th><th>Cad</th>
-              </tr></thead>
-              <tbody>
-                ${splits.map(s => `<tr class="split-row" data-km="${s.km}"
-                  onmouseenter="highlightKmOnMap(${s.km})"
-                  onmouseleave="clearKmHighlight()"
-                  onclick="toggleSplitPin(${s.km})">
-                  <td>${s.km}</td>
-                  <td class="${s.paceClass}">${s.pace}</td>
-                  <td class="${s.hrClass}">${s.hr}</td>
-                  <td>${s.elev}</td>
-                  <td>${s.cad}</td>
-                </tr>`).join('')}
-              </tbody>
-            </table>
+            <div class="splits-panel-head" style="display:flex;justify-content:space-between;align-items:center;">
+              <span id="splits-head-label">Per-km splits</span>
+              ${detailedActivity?.laps?.length > 1 ? `<div style="display:flex;gap:4px;">
+                <button class="split-tab-btn active" id="btn-km-splits" onclick="showKmSplits()">KM</button>
+                <button class="split-tab-btn" id="btn-laps" onclick="showLaps()">Laps</button>
+              </div>` : ''}
+            </div>
+            <div id="splits-table-container">${buildSplitsHTML(splits)}</div>
           </div>` : ''}
           <div class="map-panel">
             <div id="run-map"></div>
@@ -1294,6 +1360,7 @@ function renderDetail(act, streams) {
           }).join('')}
           <div style="display:flex;gap:8px;margin-top:12px;">
             <button class="btn-disconnect" style="font-size:11px;padding:4px 12px;" onclick="saveZoneBounds()">Save &amp; apply</button>
+            <button class="btn-disconnect" style="font-size:11px;padding:4px 12px;" onclick="useStravaZones()">Strava zones</button>
             <button class="btn-disconnect" style="font-size:11px;padding:4px 12px;" onclick="resetZoneBounds()">Reset defaults</button>
           </div>
         </div>
@@ -1306,6 +1373,23 @@ function renderDetail(act, streams) {
           </div>
         `).join('')}
       </div>` : ''}
+
+      ${detailedActivity?.best_efforts?.length ? `
+      <div class="section">
+        <div class="section-head">Best efforts</div>
+        <div>
+          ${detailedActivity.best_efforts
+            .filter(e => ['400m','1/2 mile','1k','1 mile','5k','10k','Half-Marathon','Marathon'].includes(e.name))
+            .map(e => `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:13px;color:var(--muted);">${e.name}</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${e.pr_rank === 1 ? '<span style="font-size:9px;font-weight:700;background:var(--orange);color:white;padding:2px 7px;border-radius:4px;letter-spacing:0.05em;">PR</span>' : e.pr_rank === 2 ? '<span style="font-size:9px;font-weight:700;background:rgba(251,191,36,0.2);color:var(--amber);padding:2px 7px;border-radius:4px;">2nd</span>' : ''}
+                <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">${fmtTime(e.elapsed_time)}</span>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+      ` : ''}
 
       ${spikes.length ? `
       <div class="section">
@@ -1795,7 +1879,10 @@ function syncMapToChartIndex(chartIdx) {
 // ─── ZONES ───
 function calcZones(hrData, timeData) {
   if (!hrData.length) return [];
-  const b = customZoneBounds || { z12: 120, z23: 148, z34: 162, z45: 174 };
+  const b = customZoneBounds || (stravaZones?.length >= 5 ? {
+    z12: stravaZones[1].min, z23: stravaZones[2].min,
+    z34: stravaZones[3].min, z45: stravaZones[4].min
+  } : { z12: 120, z23: 148, z34: 162, z45: 174 });
   const zones = [
     { name: 'Z1', min: 0,     max: b.z12, color: '#1d9e75', secs: 0 },
     { name: 'Z2', min: b.z12, max: b.z23, color: '#4ade80', secs: 0 },
@@ -1824,6 +1911,12 @@ function saveZoneBounds() {
 }
 
 function resetZoneBounds() {
+  customZoneBounds = null;
+  localStorage.removeItem('tl_zone_bounds');
+  if (currentActivity && streamData) renderDetail(currentActivity, streamData);
+}
+
+function useStravaZones() {
   customZoneBounds = null;
   localStorage.removeItem('tl_zone_bounds');
   if (currentActivity && streamData) renderDetail(currentActivity, streamData);
@@ -1893,6 +1986,61 @@ function detectSpikes(hrData, velData, altData, timeData, distData, gradeData) {
   }
 
   return spikes;
+}
+
+function buildSplitsHTML(splits) {
+  const hasSGAP = !!detailedActivity?.splits_metric?.length;
+  return `<table class="splits-table">
+    <thead><tr>
+      <th>KM</th><th>Pace</th>${hasSGAP ? '<th style="color:#38bdf8;">GAP</th>' : ''}<th>HR</th><th>Elev</th><th>Cad</th>
+    </tr></thead>
+    <tbody>
+      ${splits.map(s => {
+        const gapSpeed = hasSGAP ? detailedActivity.splits_metric[s.km - 1]?.average_grade_adjusted_speed : null;
+        const gapStr = gapSpeed > 0 ? fmtPace(gapSpeed) : '--';
+        return `<tr class="split-row" data-km="${s.km}"
+          onmouseenter="highlightKmOnMap(${s.km})" onmouseleave="clearKmHighlight()"
+          onclick="toggleSplitPin(${s.km})">
+          <td>${s.km}</td><td class="${s.paceClass}">${s.pace}</td>
+          ${hasSGAP ? `<td style="color:var(--muted);">${gapStr}</td>` : ''}
+          <td class="${s.hrClass}">${s.hr}</td><td>${s.elev}</td><td>${s.cad}</td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>`;
+}
+function buildLapsHTML(laps) {
+  if (!laps?.length) return '<div style="padding:12px;color:var(--faint);font-size:12px;">No lap data</div>';
+  const avgSpd = avg(laps.map(l=>l.average_speed).filter(Boolean));
+  return `<table class="splits-table">
+    <thead><tr><th>Lap</th><th>Dist</th><th>Time</th><th>Pace</th><th>HR</th><th>Elev</th></tr></thead>
+    <tbody>
+      ${laps.map((l,i) => `<tr class="split-row">
+        <td>${l.lap_index ?? i+1}</td>
+        <td>${((l.distance||0)/1000).toFixed(2)}km</td>
+        <td>${fmtTime(l.moving_time||l.elapsed_time||0)}</td>
+        <td class="${l.average_speed > avgSpd*1.05 ? 'pace-slow' : l.average_speed < avgSpd*0.95 ? 'pace-fast' : ''}">${l.average_speed > 0 ? fmtPace(l.average_speed) : '--'}</td>
+        <td class="${(l.average_heartrate||0) > 170 ? 'hr-high' : (l.average_heartrate||0) > 155 ? 'hr-med' : ''}">${l.average_heartrate ? Math.round(l.average_heartrate)+' bpm' : '--'}</td>
+        <td>${l.total_elevation_gain != null ? (l.total_elevation_gain>=0?'+':'')+Math.round(l.total_elevation_gain)+'m' : '--'}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+function showKmSplits() {
+  document.querySelectorAll('.split-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-km-splits')?.classList.add('active');
+  const head = document.getElementById('splits-head-label');
+  if (head) head.textContent = 'Per-km splits';
+  const container = document.getElementById('splits-table-container');
+  if (!container || !streamData) return;
+  const splits = buildSplitsTable(streamData.heartrate?.data||[], streamData.velocity_smooth?.data||[], streamData.altitude?.data||[], streamData.distance?.data||[], streamData.time?.data||[], streamData.cadence?.data||[]);
+  if (container) container.innerHTML = buildSplitsHTML(splits);
+}
+function showLaps() {
+  document.querySelectorAll('.split-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-laps')?.classList.add('active');
+  const head = document.getElementById('splits-head-label');
+  if (head) head.textContent = 'Laps';
+  const container = document.getElementById('splits-table-container');
+  if (container) container.innerHTML = buildLapsHTML(detailedActivity?.laps);
 }
 
 // ─── SPLITS TABLE ───
