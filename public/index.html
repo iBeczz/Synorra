@@ -94,10 +94,10 @@
     box-shadow: 0 8px 30px rgba(0,0,0,0.4);
   }
   .tile-map {
-    width: 100%; height: 260px; background: #1a1a1a; overflow: hidden;
+    width: 100%; height: 260px; background: #2d3e50; overflow: hidden;
     position: relative;
   }
-  .tile-map .leaflet-container { background: #1a1a1a; }
+  .tile-map .leaflet-container { background: #2d3e50; }
   .tile-no-map {
     width: 100%; height: 260px; background: #0c0e0f;
     display: flex; align-items: center; justify-content: center;
@@ -1446,7 +1446,7 @@ function initSingleTileMap(container, encoded, tid) {
     keyboard: false, tap: false
   });
 
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19
   }).addTo(map);
 
@@ -1456,7 +1456,7 @@ function initSingleTileMap(container, encoded, tid) {
   // Main route
   const line = L.polyline(latlngs, { color: '#fc4c02', weight: 3.5, opacity: 0.95, smoothFactor: 1 }).addTo(map);
 
-  map.fitBounds(line.getBounds(), { padding: [24, 24], maxZoom: 16 });
+  map.fitBounds(line.getBounds(), { padding: [24, 24] });
   tileMapInstances[tid] = map;
 }
 
