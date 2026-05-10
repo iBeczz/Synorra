@@ -57,8 +57,32 @@
 
   /* ─── HOME FEED ─── */
   #home-feed {
+    position: relative;
     overflow-y: auto; height: 100%; background: var(--bg);
     display: flex; flex-direction: column;
+  }
+  #home-feed::before,
+  #home-feed::after {
+    content: '';
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #home-feed::before {
+    top: -180px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(252,76,2,0.12) 0%, transparent 55%);
+  }
+  #home-feed::after {
+    bottom: -180px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 55%);
+  }
+  #home-feed > * {
+    position: relative;
+    z-index: 1;
   }
   .feed-topbar {
     padding: 20px 24px 0;
