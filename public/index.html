@@ -288,6 +288,7 @@
   .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
 
   .chart-wrap { position: relative; width: 100%; height: 240px; }
+  .chart-wrap canvas { cursor: crosshair; }
 
   /* ─── ZONES ─── */
   .zone-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
@@ -689,27 +690,38 @@ const splitHighlightPlugin = {
   }
 };
 
-// crosshairX is set via afterEvent so it's always current when afterDraw fires
 let crosshairX = null;
+let crosshairY = null;
 const crosshairPlugin = {
   id: 'crosshair',
   afterEvent(chart, args) {
     const e = args.event;
-    if (e.type === 'mousemove') { crosshairX = e.x; args.changed = true; }
-    else if (e.type === 'mouseout') { crosshairX = null; args.changed = true; }
+    if (e.type === 'mousemove') {
+      crosshairX = e.x; crosshairY = e.y; args.changed = true;
+    } else if (e.type === 'mouseout') {
+      crosshairX = null; crosshairY = null; args.changed = true;
+    }
   },
   afterDraw(chart) {
     if (crosshairX == null) return;
     const { ctx, chartArea } = chart;
     if (crosshairX < chartArea.left || crosshairX > chartArea.right) return;
     ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(crosshairX, chartArea.top);
-    ctx.lineTo(crosshairX, chartArea.bottom);
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.setLineDash([4, 3]);
+    // Vertical line
+    ctx.beginPath();
+    ctx.moveTo(crosshairX, chartArea.top);
+    ctx.lineTo(crosshairX, chartArea.bottom);
     ctx.stroke();
+    // Horizontal line
+    if (crosshairY != null && crosshairY >= chartArea.top && crosshairY <= chartArea.bottom) {
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, crosshairY);
+      ctx.lineTo(chartArea.right, crosshairY);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 };
