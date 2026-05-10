@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Synorra</title>
+<link rel="icon" href="/synorra-logo.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -140,8 +141,13 @@
   }
 
   .logo-mark {
-    width: 28px; height: 28px; background: var(--orange);
+    width: 28px; height: 28px; background: none;
     border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+
+  .logo-mark img {
+    width: 100%; height: 100%; object-fit: contain; display: block;
   }
 
   .logo-mark svg { width: 16px; height: 16px; }
@@ -742,7 +748,7 @@
   <div class="topbar">
     <div class="logo">
       <div class="logo-mark">
-        <svg viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        <img src="/synorra-logo.png" alt="Synorra logo">
       </div>
       Synorra
     </div>
