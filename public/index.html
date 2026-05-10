@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Synorra</title>
 <link rel="icon" href="/synorra-logo.png" type="image/png">
+<link rel="apple-touch-icon" sizes="180x180" href="/synorra-logo.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/synorra-logo.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/synorra-logo.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Synorra">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -1099,10 +1105,14 @@
         </select>
         <select class="filter-select" id="filter-type" onchange="applyFilters()">
           <option value="">Any type</option>
-          <option value="0">Easy run</option>
-          <option value="2">Long run</option>
-          <option value="3">Workout</option>
-          <option value="1">Race</option>
+          <option value="easy">Easy</option>
+          <option value="moderate">Steady</option>
+          <option value="longRun">Long run</option>
+          <option value="tempo">Tempo</option>
+          <option value="workout">Workout</option>
+          <option value="timeTrial">Time trial</option>
+          <option value="race">Race</option>
+          <option value="recovery">Recovery</option>
         </select>
       </div>
       <div class="filter-row">
@@ -1150,10 +1160,14 @@
         </select>
         <select class="filter-select" id="ff-type" onchange="applyFeedFilters()">
           <option value="">Any type</option>
-          <option value="0">Easy run</option>
-          <option value="2">Long run</option>
-          <option value="3">Workout</option>
-          <option value="1">Race</option>
+          <option value="easy">Easy</option>
+          <option value="moderate">Steady</option>
+          <option value="longRun">Long run</option>
+          <option value="tempo">Tempo</option>
+          <option value="workout">Workout</option>
+          <option value="timeTrial">Time trial</option>
+          <option value="race">Race</option>
+          <option value="recovery">Recovery</option>
         </select>
         <select class="filter-select" id="ff-period" onchange="applyFeedFilters()">
           <option value="">Any time</option>
@@ -1193,6 +1207,128 @@ const WHOOP_REDIRECT_URI = window.location.origin + window.location.pathname;
 
 let token = null;
 let currentAthlete = null;
+
+// ─── RUN TYPE DETECTION ───
+const RUN_TYPES = {
+  easy:      { label: 'Easy',       color: '#4ade80', bg: 'rgba(74,222,128,0.10)',  border: 'rgba(74,222,128,0.25)'  },
+  moderate:  { label: 'Steady',     color: '#60a5fa', bg: 'rgba(96,165,250,0.10)',  border: 'rgba(96,165,250,0.25)'  },
+  longRun:   { label: 'Long run',   color: '#60a5fa', bg: 'rgba(96,165,250,0.10)',  border: 'rgba(96,165,250,0.25)'  },
+  tempo:     { label: 'Tempo',      color: '#fb923c', bg: 'rgba(251,146,60,0.10)',  border: 'rgba(251,146,60,0.25)'  },
+  workout:   { label: 'Workout',    color: '#a855f7', bg: 'rgba(168,85,247,0.10)',  border: 'rgba(168,85,247,0.25)'  },
+  timeTrial: { label: 'Time trial', color: '#fbbf24', bg: 'rgba(251,191,36,0.10)',  border: 'rgba(251,191,36,0.25)'  },
+  race:      { label: 'Race',       color: '#f87171', bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.25)' },
+  recovery:  { label: 'Recovery',   color: '#888580', bg: 'rgba(136,133,128,0.10)', border: 'rgba(136,133,128,0.25)' },
+};
+
+const RUN_TYPE_CACHE_KEY = 'synorra_runtypes_v3';
+let runTypeCache = {};
+
+function loadRunTypeCache() {
+  try { return JSON.parse(localStorage.getItem(RUN_TYPE_CACHE_KEY) || '{}'); } catch { return {}; }
+}
+function saveRunTypeCache() {
+  try { localStorage.setItem(RUN_TYPE_CACHE_KEY, JSON.stringify(runTypeCache)); } catch {}
+}
+
+function detectRunType(act, maxHR) {
+  const km       = (act.distance || 0) / 1000;
+  const avgHR    = act.average_heartrate || 0;
+  const actMax   = act.max_heartrate || 0;
+  const wtype    = act.workout_type;
+  const prCount  = act.pr_count || 0;
+  const suffer   = act.suffer_score || 0;
+  const sufferKm = km > 0.5 && suffer > 0 ? suffer / km : 0;
+
+  // Trust Strava's explicit user-set type
+  if (wtype === 1) return 'race';
+  if (wtype === 3) return 'workout';
+
+  // No HR → distance-only fallback
+  if (!avgHR || !maxHR || maxHR < 120) {
+    if (wtype === 2 || km >= 16) return 'longRun';
+    return 'easy';
+  }
+
+  const eff        = avgHR / maxHR;
+  // spread = how far the session max spiked above average, as % of actMax
+  // High spread → HR oscillated (intervals), low spread → sustained effort
+  const spread     = actMax > avgHR ? (actMax - avgHR) / actMax : 0;
+  // actMaxPct = how hard the session ever got at its absolute peak
+  // If this is low, the athlete NEVER pushed hard — it was a capped easy effort
+  const actMaxPct  = actMax > 0 ? actMax / maxHR : eff + 0.05;
+
+  // ── EARLY EASY GATE ───────────────────────────────────────────────────────
+  // If the session peak HR is low AND HR was consistent (no spikes),
+  // it's an easy/aerobic session regardless of what avgHR looks like
+  // as a raw % of global max. Catches well-trained runners whose Zone 2
+  // sits at a higher absolute HR than a generic formula expects.
+  if (actMaxPct < 0.88 && spread < 0.10) {
+    if (km >= 16) return 'longRun';
+    return 'easy';
+  }
+
+  // ── LONG RUN ──────────────────────────────────────────────────────────────
+  if (km >= 21) return 'longRun';
+  if (km >= 16 && eff < 0.83) return 'longRun';
+  if (wtype === 2 && km >= 8) return 'longRun';
+
+  // ── RACE ──────────────────────────────────────────────────────────────────
+  // PRs + sustained high HR = almost certainly a race
+  if (prCount > 0 && eff >= 0.85 && km >= 2) return 'race';
+  // Absolute max effort, very flat HR profile (sustained, not interval)
+  if (eff >= 0.91 && spread < 0.08 && km >= 1.5) return 'race';
+
+  // ── TIME TRIAL ────────────────────────────────────────────────────────────
+  // High sustained effort, short-ish, no PRs (new distance / not raced before)
+  if (eff >= 0.87 && spread < 0.10 && km >= 1 && km <= 12) return 'timeTrial';
+
+  // ── INTERVALS / WORKOUT ───────────────────────────────────────────────────
+  // Multi-signal: need ≥2 points of evidence to avoid false positives
+  let iScore = 0;
+  // Strong signal: clear HR spikes while avg HR is moderate (not easy, not all-out)
+  if (spread >= 0.16 && eff >= 0.74 && eff < 0.88) iScore += 2;
+  // Secondary: high suffer score per km relative to HR (effort bursts)
+  if (sufferKm >= 9  && eff >= 0.72 && eff < 0.87) iScore += 1;
+  // Corroborating: moderate spread + moderate effort over meaningful distance
+  if (spread >= 0.13 && eff >= 0.76 && eff < 0.86 && km >= 3) iScore += 1;
+  if (iScore >= 2) return 'workout';
+
+  // ── TEMPO ─────────────────────────────────────────────────────────────────
+  // Sustained hard effort with little HR variability (no recovery dips)
+  if (eff >= 0.82 && eff < 0.88 && spread < 0.12 && km >= 2) return 'tempo';
+
+  // ── RECOVERY ──────────────────────────────────────────────────────────────
+  if (km < 5 && eff < 0.68) return 'recovery';
+
+  // ── STEADY / MODERATE ─────────────────────────────────────────────────────
+  if (eff >= 0.77 && eff < 0.82 && km >= 3) return 'moderate';
+
+  // ── EASY ──────────────────────────────────────────────────────────────────
+  return 'easy';
+}
+
+function buildRunTypeIndex() {
+  if (!activities.length) return;
+  runTypeCache = loadRunTypeCache();
+  const maxHR  = Math.max(185, ...activities.filter(a => a.max_heartrate > 0).map(a => a.max_heartrate));
+  let changed  = false;
+  activities.forEach(a => {
+    if (runTypeCache[a.id] === undefined) {
+      runTypeCache[a.id] = detectRunType(a, maxHR);
+      changed = true;
+    }
+  });
+  if (changed) saveRunTypeCache();
+}
+
+function getRunType(actId) {
+  return RUN_TYPES[runTypeCache[actId]] || RUN_TYPES.easy;
+}
+
+function runTypeBadgeHtml(actId) {
+  const rt = getRunType(actId);
+  return `<span style="font-size:9px;font-weight:700;letter-spacing:0.04em;padding:2px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0;background:${rt.bg};color:${rt.color};border:1px solid ${rt.border};">${rt.label}</span>`;
+}
 let currentChart = null;
 let streamData = null;
 let currentActivity = null;
@@ -1694,6 +1830,7 @@ async function showApp(athlete) {
     activities = data;
     trainingLoadSeries = null;
     prBoardData = null;
+    buildRunTypeIndex();
     applyFeedFilters();
     applyFilters();
     handleRoute(); // open directly to an activity if URL is /activity/:id
@@ -1726,6 +1863,7 @@ function renderSidebar(acts) {
         <div class="act-name">${a.name}</div>
         <div class="act-date">${fmtDate(a.start_date_local)}</div>
         <div class="act-chips">
+          ${runTypeBadgeHtml(a.id)}
           <span class="chip">${fmtDist(a.distance)}</span>
           <span class="chip">${fmtPace(a.average_speed)}/km</span>
           ${a.average_heartrate ? `<span class="chip">${Math.round(a.average_heartrate)}bpm</span>` : ''}
@@ -1797,8 +1935,6 @@ function buildActivityTile(a) {
   const mapEl = enc
     ? `<div class="tile-map" id="tilemap-${a.id}" data-tile-id="${a.id}" data-polyline="${enc}"></div>`
     : `<div class="tile-no-map">No route data</div>`;
-  const workoutTypes = { 0:'Run', 1:'Race', 2:'Long run', 3:'Workout', 11:'Run' };
-  const wtype = workoutTypes[a.workout_type] || 'Run';
   const pr = a.pr_count > 0 ? `<span class="chip chip-pr" style="font-size:9px;">${a.pr_count} PR${a.pr_count>1?'s':''}</span>` : '';
   return `<div class="activity-tile" id="ti-${a.id}" onclick="selectActivity(${a.id})">
     ${mapEl}
@@ -1806,7 +1942,7 @@ function buildActivityTile(a) {
       <div class="tile-title-row">
         <div class="tile-name">${a.name}</div>
         ${pr}
-        <span style="font-size:10px;font-family:var(--mono);color:var(--faint);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;flex-shrink:0;">${wtype}</span>
+        ${runTypeBadgeHtml(a.id)}
       </div>
       <div class="tile-meta">${fmtDate(a.start_date_local)}${a.location_city ? ' · ' + a.location_city : ''}</div>
       <div class="tile-metrics">
@@ -1852,7 +1988,7 @@ function applyFeedFilters() {
       const km = a.distance / 1000;
       if (km < dMin || km >= dMax) return false;
     }
-    if (type !== undefined && type !== '' && String(a.workout_type) !== type) return false;
+    if (type && (runTypeCache[a.id] || 'easy') !== type) return false;
     if (period > 0 && Date.now() - new Date(a.start_date_local).getTime() > period * 86400000) return false;
     return true;
   });
@@ -1907,7 +2043,7 @@ function applyFilters() {
       const km = a.distance / 1000;
       if (km < dMin || km >= dMax) return false;
     }
-    if (type !== undefined && type !== '' && String(a.workout_type) !== type) return false;
+    if (type && (runTypeCache[a.id] || 'easy') !== type) return false;
     if (period > 0) {
       const actDate = new Date(a.start_date_local).getTime();
       if (now - actDate > period * 86400000) return false;
