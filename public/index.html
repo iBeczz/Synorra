@@ -626,6 +626,7 @@ let athleteStats = null;
 
 let chartSplitActiveKm = null;
 let pinnedSplitKm = null;
+let zoneHandles = [120, 148, 162, 174]; // current slider positions (4 boundaries)
 
 let activeStreams = new Set(['hr', 'pace']);
 
@@ -1359,29 +1360,8 @@ function renderDetail(act, streams) {
           <button class="zone-edit-btn" onclick="toggleZoneEditor()">Edit zones</button>
         </div>
         <div id="zone-editor" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:12px;color:var(--muted);">
-          ${(() => {
-            const src = customZoneBounds ? 'manual' : stravaZones?.length >= 5 ? 'strava' : 'default';
-            const srcLabel = src === 'manual' ? '⚙ Manual override' : src === 'strava' ? '✓ Strava zones active' : '⚠ App defaults — reconnect Strava to load your zones';
-            const srcColor = src === 'manual' ? 'var(--amber)' : src === 'strava' ? 'var(--green)' : 'var(--faint)';
-            return `<div style="font-size:10px;color:${srcColor};margin-bottom:10px;font-family:var(--mono);">${srcLabel}</div>`;
-          })()}
-          <div style="font-size:10px;color:var(--faint);margin-bottom:8px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;">Zone boundaries in BPM</div>
-          ${['Z1/Z2','Z2/Z3','Z3/Z4','Z4/Z5'].map((label, i) => {
-            const keys = ['z12','z23','z34','z45'];
-            const hardcoded = [120,148,162,174];
-            // Show the currently active values: custom → Strava → hardcoded defaults
-            const stravaB = stravaZones?.length >= 5 ? {
-              z12: stravaZones[1].min, z23: stravaZones[2].min,
-              z34: stravaZones[3].min, z45: stravaZones[4].min
-            } : null;
-            const b = customZoneBounds || stravaB || {};
-            return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);">
-              <span style="font-family:var(--mono);font-size:11px;width:60px;">${label}</span>
-              <input type="number" id="zb_${keys[i]}" class="effort-input" style="width:70px;padding:4px 8px;" value="${b[keys[i]] ?? hardcoded[i]}" min="60" max="220">
-              <span style="font-size:11px;color:var(--faint);">bpm</span>
-            </div>`;
-          }).join('')}
-          <div style="display:flex;gap:8px;margin-top:12px;">
+          <div id="zone-slider-wrap"></div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
             <button class="btn-disconnect" style="font-size:11px;padding:4px 12px;" onclick="saveZoneBounds()">Save &amp; apply</button>
             ${stravaZones?.length >= 5 ? `<button class="btn-disconnect" style="font-size:11px;padding:4px 12px;" onclick="useStravaZones()">Strava zones</button>` : ''}
             <button class="btn-disconnect" style="font-size:11px;padding:4px 12px;" onclick="resetZoneBounds()">Reset defaults</button>
@@ -1437,6 +1417,7 @@ function renderDetail(act, streams) {
     </div>
   `;
 
+  initZoneSlider();
   activeStreams = new Set(['hr', 'pace']);
   pinnedSplitKm = null; chartSplitActiveKm = null;
   rebuildChart();
@@ -1921,27 +1902,128 @@ function calcZones(hrData, timeData) {
   return zones.map(z => ({ ...z, pct: Math.round(z.secs/total*100) })).filter(z => z.pct > 0);
 }
 
+// ─── ZONE SLIDER ───
+const ZS_MIN = 40, ZS_MAX = 220;
+const ZS_COLORS = ['#1d9e75','#4ade80','#fbbf24','#f97316','#f87171'];
+
+function initZoneSlider() {
+  // Sync handles from the currently active bounds: custom → Strava → hardcoded
+  const stravaB = stravaZones?.length >= 5 ? {
+    z12: stravaZones[1].min, z23: stravaZones[2].min,
+    z34: stravaZones[3].min, z45: stravaZones[4].min
+  } : null;
+  const b = customZoneBounds || stravaB || { z12: 120, z23: 148, z34: 162, z45: 174 };
+  zoneHandles = [b.z12, b.z23, b.z34, b.z45];
+  renderZoneSlider();
+}
+
+function renderZoneSlider() {
+  const wrap = document.getElementById('zone-slider-wrap');
+  if (!wrap) return;
+
+  const bounds = [ZS_MIN, ...zoneHandles, ZS_MAX];
+  const span   = ZS_MAX - ZS_MIN;
+  const pct    = v => ((v - ZS_MIN) / span * 100).toFixed(2);
+
+  // Source status
+  const src = customZoneBounds ? 'manual' : stravaZones?.length >= 5 ? 'strava' : 'default';
+  const srcLabel = src === 'manual' ? '⚙ Manual' : src === 'strava' ? '✓ Strava zones' : '⚠ App defaults';
+  const srcColor = src === 'manual' ? 'var(--amber)' : src === 'strava' ? 'var(--green)' : 'var(--faint)';
+
+  // Coloured zone segments
+  const segs = ZS_COLORS.map((col, i) => {
+    const l = pct(bounds[i]), w = ((bounds[i+1]-bounds[i])/span*100).toFixed(2);
+    return `<div style="position:absolute;left:${l}%;width:${w}%;height:100%;background:${col};top:0;"></div>`;
+  }).join('');
+
+  // Z1–Z5 labels centred in each zone
+  const zLabels = ZS_COLORS.map((col, i) => {
+    const mid = pct((bounds[i] + bounds[i+1]) / 2);
+    return `<div style="position:absolute;left:${mid}%;transform:translateX(-50%);top:-20px;font-size:9px;font-weight:700;font-family:var(--mono);color:${col};">Z${i+1}</div>`;
+  }).join('');
+
+  // Fixed endpoint dots + bpm labels
+  const endDot = (p, label) =>
+    `<div style="position:absolute;left:${p}%;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--surface2);border:2px solid var(--border2);z-index:1;pointer-events:none;"></div>
+     <div style="position:absolute;left:${p}%;top:calc(100% + 8px);transform:translateX(-50%);font-size:9px;color:var(--faint);font-family:var(--mono);white-space:nowrap;pointer-events:none;">${label}</div>`;
+
+  // Draggable handles — 4 movable dots + value labels
+  const handles = zoneHandles.map((v, i) => {
+    const l = pct(v);
+    // Ring colour = the zone colour this handle separates into on the right
+    const ring = ZS_COLORS[i + 1];
+    return `<div class="zone-hdl" data-idx="${i}" style="position:absolute;left:${l}%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--bg);box-shadow:0 0 0 2.5px ${ring},0 2px 6px rgba(0,0,0,0.5);cursor:grab;z-index:3;touch-action:none;" title="${v} bpm"></div>
+    <div style="position:absolute;left:${l}%;top:calc(100% + 8px);transform:translateX(-50%);font-size:9px;color:var(--muted);font-family:var(--mono);white-space:nowrap;pointer-events:none;">${v}</div>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div style="font-size:10px;color:${srcColor};margin-bottom:14px;font-family:var(--mono);">${srcLabel}</div>
+    <div style="position:relative;margin:24px 10px 44px;">
+      <div id="zs-track" style="position:relative;height:18px;border-radius:9px;overflow:visible;background:var(--bg);">
+        ${segs}${zLabels}${endDot(0, ZS_MIN + ' bpm')}${handles}${endDot(100, ZS_MAX + ' bpm')}
+      </div>
+    </div>`;
+
+  wrap.querySelectorAll('.zone-hdl').forEach(h => {
+    h.addEventListener('mousedown',  zsMouseDown);
+    h.addEventListener('touchstart', zsTouchStart, { passive: false });
+  });
+}
+
+function zsMoveHandle(idx, clientX) {
+  const track = document.getElementById('zs-track');
+  if (!track) return;
+  const rect = track.getBoundingClientRect();
+  let val = Math.round(ZS_MIN + Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * (ZS_MAX - ZS_MIN));
+  const lo = idx === 0 ? ZS_MIN + 3 : zoneHandles[idx - 1] + 3;
+  const hi = idx === 3 ? ZS_MAX - 3 : zoneHandles[idx + 1] - 3;
+  zoneHandles[idx] = Math.max(lo, Math.min(hi, val));
+  renderZoneSlider();
+}
+
+function zsMouseDown(e) {
+  e.preventDefault();
+  const idx = parseInt(e.currentTarget.dataset.idx);
+  const mm = ev => zsMoveHandle(idx, ev.clientX);
+  const mu = () => { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+  document.addEventListener('mousemove', mm);
+  document.addEventListener('mouseup',   mu);
+}
+
+function zsTouchStart(e) {
+  e.preventDefault();
+  const idx = parseInt(e.currentTarget.dataset.idx);
+  const tm = ev => zsMoveHandle(idx, ev.touches[0].clientX);
+  const te = () => { document.removeEventListener('touchmove', tm); document.removeEventListener('touchend', te); };
+  document.addEventListener('touchmove', tm, { passive: false });
+  document.addEventListener('touchend',  te);
+}
+
 function toggleZoneEditor() {
   const el = document.getElementById('zone-editor');
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function saveZoneBounds() {
-  const bounds = { z12: +document.getElementById('zb_z12').value, z23: +document.getElementById('zb_z23').value, z34: +document.getElementById('zb_z34').value, z45: +document.getElementById('zb_z45').value };
-  customZoneBounds = bounds;
-  localStorage.setItem('tl_zone_bounds', JSON.stringify(bounds));
+  const [z12, z23, z34, z45] = zoneHandles;
+  customZoneBounds = { z12, z23, z34, z45 };
+  localStorage.setItem('tl_zone_bounds', JSON.stringify(customZoneBounds));
   if (currentActivity && streamData) renderDetail(currentActivity, streamData);
 }
 
 function resetZoneBounds() {
   customZoneBounds = null;
   localStorage.removeItem('tl_zone_bounds');
+  zoneHandles = [120, 148, 162, 174];
   if (currentActivity && streamData) renderDetail(currentActivity, streamData);
 }
 
 function useStravaZones() {
   customZoneBounds = null;
   localStorage.removeItem('tl_zone_bounds');
+  if (stravaZones?.length >= 5) {
+    zoneHandles = [stravaZones[1].min, stravaZones[2].min, stravaZones[3].min, stravaZones[4].min];
+  }
   if (currentActivity && streamData) renderDetail(currentActivity, streamData);
 }
 
