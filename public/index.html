@@ -620,10 +620,12 @@ let activeStreams = new Set(['hr', 'pace']);
 const STREAM_CFG = {
   hr:    { label:'HR',      color:'#f87171', unit:'bpm',  side:'left',  key:'heartrate',        xform: v => v || null, reversed: false, fill: false },
   pace:  { label:'Pace',    color:'#60a5fa', unit:'/km',  side:'right', key:'velocity_smooth',  xform: v => v > 0 ? parseFloat((1000/v/60).toFixed(3)) : null, reversed: true, fill: false },
+  gap:   { label:'GAP',     color:'#38bdf8', unit:'/km',  side:'right', key:'gap',              xform: v => v > 0 ? parseFloat((1000/v/60).toFixed(3)) : null, reversed: true, fill: false },
   elev:  { label:'Elev',    color:'#4ade80', unit:'m',    side:'right', key:'altitude',         xform: v => v ?? null, reversed: false, fill: true  },
   cad:   { label:'Cadence', color:'#c084fc', unit:'spm',  side:'left',  key:'cadence',          xform: v => v ? v*2 : null, reversed: false, fill: false },
   grade: { label:'Grade',   color:'#fbbf24', unit:'%',    side:'left',  key:'grade_smooth',     xform: v => v ?? null, reversed: false, fill: false },
-  power: { label:'Power',   color:'#e879f9', unit:'W',    side:'left',  key:'watts',            xform: v => v || null, reversed: false, fill: false }
+  power: { label:'Power',   color:'#e879f9', unit:'W',    side:'left',  key:'watts',            xform: v => v || null, reversed: false, fill: false },
+  temp:  { label:'Temp',    color:'#fb923c', unit:'°C',   side:'left',  key:'temp',             xform: v => v != null ? v : null, reversed: false, fill: false }
 };
 
 let customZoneBounds = null;
@@ -737,18 +739,36 @@ const swimLanePlugin = {
     if (!entries || !entries.length) return;
     const { ctx, chartArea } = chart;
     const yScale = chart.scales.y;
+    const xScale = chart.scales.x;
     if (!yScale) return;
     ctx.save();
-    const n = entries.length;
+
+    const n        = entries.length;
     const bStarts  = opts.bandStarts  || entries.map((_, i) => i);
     const bWeights = opts.bandWeights || entries.map(() => 1);
+    const preComp  = opts.bandPreComp || [];
+    const kmTicks  = opts.kmTicks     || [];
+    const EDGE_F   = opts.EDGE_FRAC != null ? opts.EDGE_FRAC : 0.15;
+    const BP       = opts.BAND_PAD  != null ? opts.BAND_PAD  : 0.08;
+
+    // Format a y-axis tick value for its metric
+    const fmtTick = (v, cfg) => {
+      if (cfg.unit === '/km') {
+        const m = Math.floor(v), s = Math.round((v - m) * 60);
+        return `${m}:${String(s).padStart(2,'0')}`;
+      }
+      if (cfg.unit === '%') return v.toFixed(1);
+      return Math.round(v) + '';
+    };
+
     for (let idx = 0; idx < n; idx++) {
       const [, cfg] = entries[idx];
       const ds = chart.data.datasets[idx];
       if (!ds) continue;
-      const topY    = yScale.getPixelForValue(bStarts[idx] + bWeights[idx]);
-      const bottomY = yScale.getPixelForValue(bStarts[idx]);
-      const midY    = (topY + bottomY) / 2;
+      const bS      = bStarts[idx];
+      const bW      = bWeights[idx];
+      const topY    = yScale.getPixelForValue(bS + bW);
+      const bottomY = yScale.getPixelForValue(bS);
       const bandH   = bottomY - topY;
 
       // Subtle alternating band tint
@@ -762,7 +782,25 @@ const swimLanePlugin = {
         ctx.beginPath(); ctx.moveTo(chartArea.left, topY); ctx.lineTo(chartArea.right, topY); ctx.stroke();
       }
 
-      // Stream label — colour pill in top-left of band
+      // ── Per-band km grid lines + labels ──
+      if (xScale && kmTicks.length) {
+        ctx.font = '8px "DM Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        kmTicks.forEach(({ labelIdx, km }) => {
+          const x = xScale.getPixelForValue(labelIdx);
+          if (x < chartArea.left || x > chartArea.right) return;
+          // Vertical km grid line (slightly brighter than Chart.js default)
+          ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+          ctx.lineWidth = 1; ctx.setLineDash([]);
+          ctx.beginPath(); ctx.moveTo(x, topY); ctx.lineTo(x, bottomY); ctx.stroke();
+          // km label near top of each band (below the separator)
+          ctx.fillStyle = 'rgba(90,86,82,0.75)';
+          ctx.fillText(km + ' km', x, topY + 3);
+        });
+      }
+
+      // ── Stream label pill (top-left) ──
       const labelText = cfg.label.toUpperCase();
       ctx.font = '600 9px "DM Mono", monospace';
       const tw = ctx.measureText(labelText).width;
@@ -775,14 +813,54 @@ const swimLanePlugin = {
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';
       ctx.fillText(labelText, pill.x, pill.y + 4);
 
-      // Min / max value labels at bottom and top of band
+      // ── Y-axis ticks (left edge, metric colour) ──
+      const pc = preComp[idx];
+      if (pc) {
+        const { coreMin, coreMax } = pc;
+        const cRange = coreMax - coreMin || 1;
+        // Nice step for ~4 ticks in core range
+        const rawStep = cRange / 4;
+        const mag   = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+        const normd = rawStep / mag;
+        const step  = normd <= 1.5 ? mag : normd <= 3 ? 2*mag : normd <= 7 ? 5*mag : 10*mag;
+        const first = Math.ceil(coreMin / step) * step;
+
+        ctx.lineWidth = 1; ctx.setLineDash([]);
+        ctx.font = '8px "DM Mono", monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+
+        for (let v = first; v <= coreMax + step * 0.01; v += step) {
+          let normV = EDGE_F + ((v - coreMin) / cRange) * (1 - 2 * EDGE_F);
+          normV = Math.max(0, Math.min(1, normV));
+          if (cfg.reversed) normV = 1 - normV;
+          const yPx = yScale.getPixelForValue(bS + BP + normV * (bW - 2 * BP));
+          if (yPx < topY + 26 || yPx > bottomY - 6) continue; // avoid pill + bottom edge
+
+          // Tick mark
+          ctx.strokeStyle = cfg.color + '66';
+          ctx.beginPath();
+          ctx.moveTo(chartArea.left, yPx);
+          ctx.lineTo(chartArea.left + 5, yPx);
+          ctx.stroke();
+
+          // Label with dark background for readability over chart lines
+          const tickStr = fmtTick(v, cfg);
+          const tw2 = ctx.measureText(tickStr).width;
+          ctx.fillStyle = 'rgba(8,10,14,0.72)';
+          ctx.fillRect(chartArea.left + 6, yPx - 5, tw2 + 4, 10);
+          ctx.fillStyle = cfg.color + 'cc';
+          ctx.fillText(tickStr, chartArea.left + 8, yPx);
+        }
+      }
+
+      // ── Absolute min/max at right edge ──
       if (ds._minV != null && ds._maxV != null) {
         const fmtV = (v) => {
           if (cfg.unit === '/km') { const m=Math.floor(v),s=Math.round((v-m)*60); return `${m}:${String(s).padStart(2,'0')}`; }
           return Number.isInteger(v) ? String(v) : v.toFixed(1);
         };
         ctx.font = '9px "DM Mono", monospace';
-        ctx.fillStyle = 'rgba(150,145,140,0.55)';
+        ctx.fillStyle = 'rgba(150,145,140,0.45)';
         ctx.textAlign = 'right'; ctx.textBaseline = 'top';
         const hiLabel = cfg.reversed ? fmtV(ds._minV) : fmtV(ds._maxV);
         const loLabel = cfg.reversed ? fmtV(ds._maxV) : fmtV(ds._minV);
@@ -1067,6 +1145,19 @@ async function selectActivity(id) {
 
   try {
     streamData = await fetchStreams(id);
+    // Compute GAP (Grade Adjusted Pace) via Minetti et al. energy-cost model
+    const _vel = streamData.velocity_smooth?.data || [];
+    const _grd = streamData.grade_smooth?.data   || [];
+    if (_vel.length && _grd.length) {
+      streamData.gap = {
+        data: _vel.map((v, i) => {
+          if (!v) return 0;
+          const g = (_grd[i] || 0) / 100; // grade % → decimal
+          const c = 0.155*g**3 + 0.724*g**2 + 2.599*g + 3.599;
+          return v * (c / 3.599); // grade-adjusted speed in m/s
+        })
+      };
+    }
     renderDetail(currentActivity, streamData);
   } catch(e) {
     detail.innerHTML = `<div class="detail"><div class="error-banner">Failed to load stream: ${e.message}</div></div>`;
@@ -1131,6 +1222,8 @@ function renderDetail(act, streams) {
           ${cad.length ? `<button class="chart-tab" data-stream="cad"   onclick="toggleStream('cad',this)">Cadence</button>` : ''}
           ${grade.length ? `<button class="chart-tab" data-stream="grade" onclick="toggleStream('grade',this)">Grade</button>` : ''}
           ${streams.watts?.data?.length ? `<button class="chart-tab" data-stream="power" onclick="toggleStream('power',this)">Power</button>` : ''}
+          ${streams.gap?.data?.length  ? `<button class="chart-tab" data-stream="gap"   onclick="toggleStream('gap',this)">GAP</button>` : ''}
+          ${streams.temp?.data?.length ? `<button class="chart-tab" data-stream="temp"  onclick="toggleStream('temp',this)">Temp</button>` : ''}
         </div>
         <div class="chart-box">
           <div class="chart-legend" id="chart-legend"></div>
@@ -1272,6 +1365,15 @@ function rebuildChart() {
   const labels = [];
   for (let i = 0; i < N; i += step) labels.push(distArr[i] ? (distArr[i]/1000).toFixed(2) : (timeArr[i]/60).toFixed(1));
 
+  // Find which label indices land at each 1 km mark (for per-band x-axis and tick filtering)
+  const kmTicks = [];
+  { let nextKm = 1;
+    for (let li = 0; li < labels.length; li++) {
+      const d = distArr[Math.min(li * step, N - 1)] / 1000;
+      while (d >= nextKm) { kmTicks.push({ labelIdx: li, km: nextKm }); nextKm++; }
+    }
+  }
+
   // Collect active entries that have data
   const activeEntries = Object.entries(STREAM_CFG).filter(([key, cfg]) =>
     activeStreams.has(key) && (streamData[cfg.key]?.data || []).length > 0
@@ -1388,7 +1490,7 @@ function rebuildChart() {
         legend: { display: false },
         crosshair: {},
         splitHighlight: {},
-        swimLane: { entries: activeEntries, bandStarts, bandWeights },
+        swimLane: { entries: activeEntries, bandStarts, bandWeights, bandPreComp, kmTicks, EDGE_FRAC, BAND_PAD },
         tooltip: {
           enabled: false,
           external(context) {
@@ -1435,10 +1537,7 @@ function rebuildChart() {
                   : actualV.toFixed(1) + ' ' + unit;
               }
 
-              // Distance + elapsed header on the first (topmost) band only
-              const headerHTML = i === 0
-                ? `<div style="color:#888580;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.08);">${distLabel} km${elapsedStr ? ` · ${elapsedStr}` : ''}</div>`
-                : '';
+              const headerHTML = `<div style="color:#888580;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.08);">${distLabel} km${elapsedStr ? ` · ${elapsedStr}` : ''}</div>`;
               el.innerHTML = headerHTML + `<span style="color:${ds.borderColor};">${ds.label}: ${valStr}</span>`;
               el.style.opacity = '1';
 
@@ -1466,7 +1565,14 @@ function rebuildChart() {
         }
       },
       scales: {
-        x: { ticks: { maxTicksLimit: 10, color: '#444240', font: { size: 10, family: "'DM Mono', monospace" } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        x: {
+          ticks: {
+            maxTicksLimit: 500,
+            callback: (val, idx) => { const kt = kmTicks.find(t => t.labelIdx === idx); return kt ? kt.km + ' km' : null; },
+            color: '#444240', font: { size: 10, family: "'DM Mono', monospace" }
+          },
+          grid: { display: false } // km grid lines are drawn per-band by swimLane plugin
+        },
         y: { position: 'left', min: 0, max: totalY, display: false, grid: { display: false } }
       }
     }
