@@ -1270,21 +1270,32 @@ function rebuildChart() {
     const [key, cfg] = activeEntries[idx];
     const raw = streamData[cfg.key]?.data || [];
 
-    // Compute min/max from real values
-    let minV = Infinity, maxV = -Infinity;
+    // Compute robust min/max using 2nd–98th percentiles to suppress outliers
+    // (e.g. a brief stop making pace spike won't crush the rest of the graph)
+    const vals = [];
     for (let i = 0; i < N; i += step) {
       const v = cfg.xform(raw[i] ?? null);
-      if (v != null) { if (v < minV) minV = v; if (v > maxV) maxV = v; }
+      if (v != null) vals.push(v);
     }
-    if (!isFinite(minV)) { minV = 0; maxV = 1; }
-    const range = maxV - minV || 1;
+    let minV, maxV;
+    if (!vals.length) {
+      minV = 0; maxV = 1;
+    } else {
+      vals.sort((a, b) => a - b);
+      const pct = (p) => vals[Math.min(vals.length - 1, Math.max(0, Math.floor(p * vals.length)))];
+      minV = pct(0.02);
+      maxV = pct(0.98);
+      if (maxV <= minV) { minV = vals[0]; maxV = vals[vals.length - 1]; }
+      if (maxV <= minV) maxV = minV + 1;
+    }
+    const range = maxV - minV;
 
-    // Normalise into band [idx+PAD, idx+1-PAD]
+    // Normalise into band [idx+PAD, idx+1-PAD]; outliers clamped to band edges
     const data = [];
     for (let i = 0; i < N; i += step) {
       const v = cfg.xform(raw[i] ?? null);
       if (v == null) { data.push(null); continue; }
-      let norm = (v - minV) / range; // 0 = min, 1 = max
+      let norm = Math.max(0, Math.min(1, (v - minV) / range)); // clamp outliers
       if (cfg.reversed) norm = 1 - norm; // flip so "better" value is higher
       data.push(idx + BAND_PAD + norm * BAND_FILL);
     }
