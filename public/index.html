@@ -586,6 +586,152 @@
   }
   .whoop-not-connected a { color: var(--whoop); text-decoration: none; }
   .whoop-not-connected a:hover { text-decoration: underline; }
+
+  /* ════════════════════════════════════════════════
+     MOBILE  (≤ 767 px)
+     Strategy: single-column everywhere, no sidebar
+     split, larger tap targets, stacked layouts.
+     ════════════════════════════════════════════════ */
+  @media (max-width: 767px) {
+
+    /* ── Shell: always single column ── */
+    .shell, .shell.sidebar-open {
+      grid-template-columns: 1fr;
+    }
+    /* Sidebar never sits beside the detail on mobile —
+       the user navigates via the feed / history API    */
+    .shell.sidebar-open .sidebar { display: none !important; }
+
+    /* ── Topbar ── */
+    .topbar { padding: 0 14px; gap: 8px; }
+    .logo   { font-size: 13px; gap: 8px; }
+    .logo-mark { width: 24px; height: 24px; }
+    .topbar-right { gap: 7px; }
+    .athlete-pill { display: none; }          /* saves room */
+    .btn-whoop    { display: none; }          /* connect on desktop */
+    .btn-disconnect { font-size: 11px; padding: 4px 9px; }
+    #copy-btn { font-size: 11px !important; padding: 5px 11px !important; }
+
+    /* ── Home feed ── */
+    .feed-topbar    { padding: 12px 14px 0; }
+    .feed-filter-bar {
+      padding: 10px 14px 0; gap: 6px;
+      flex-direction: row; flex-wrap: wrap;  /* keep row layout, wrap selects */
+    }
+    /* Search always occupies the full first row */
+    .feed-filter-bar .filter-search { min-width: 100%; order: -1; }
+    /* Selects share the row below, shrink as needed */
+    .feed-filter-bar select.filter-select { flex: 1; min-width: 0; font-size: 10px; }
+    .feed-filter-bar .filter-clear { flex: 0; }
+    .feed-count { padding: 6px 14px 0; }
+
+    .activity-tiles {
+      padding: 12px 14px 32px;
+      max-width: 100%;
+      gap: 14px;
+    }
+    .tile-map, .tile-no-map { height: 200px; }
+    .tile-body    { padding: 12px 14px; }
+    .tile-name    { font-size: 13px; }
+    .tile-metrics { gap: 12px; }
+    .tile-metric-val { font-size: 12px; }
+    .tile-metric-lbl { font-size: 8px; }
+
+    /* Athlete stats strip — horizontal scroll on narrow screens */
+    #athlete-stats > div {
+      flex-wrap: nowrap !important;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
+    }
+    #athlete-stats > div > div { min-width: 180px; }
+
+    /* ── Sidebar back button (visible inside activity detail on mobile) ── */
+    .sidebar-back { padding: 12px 16px; font-size: 12px; }
+
+    /* ── Activity detail ── */
+    .detail { padding: 16px 14px; }
+    .detail-header { margin-bottom: 16px; }
+    .detail-title  { font-size: 18px; }
+    .detail-meta   { font-size: 11px; }
+
+    /* ── Metrics grid: tighter ── */
+    .metrics-grid {
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .metric     { padding: 10px 10px; }
+    .metric-val { font-size: 17px; }
+    .metric-lbl { font-size: 9px; }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 18px; }
+
+    /* ── Stream chart: horizontally scrollable ── */
+    .chart-box  { padding: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .chart-wrap { min-width: 460px; }         /* chart never compressed below this */
+    .chart-tabs { gap: 5px; }
+    .chart-tab  { font-size: 10px; padding: 5px 9px; }
+
+    /* ── Zone slider: larger touch handles ── */
+    .zone-hdl {
+      width: 22px !important;
+      height: 22px !important;
+      /* expand the tap area without changing visual size */
+    }
+
+    /* ── HR zones editor ── */
+    .zone-edit-btn { padding: 3px 10px; font-size: 10px; }
+    #zone-editor { padding: 12px; }
+
+    /* ── Map + splits: stack vertically ── */
+    .map-splits-layout { flex-direction: column; gap: 12px; }
+    .splits-panel {
+      width: 100%;
+      height: auto;
+      max-height: 380px;
+    }
+    #run-map { height: 300px; }
+
+    /* ── Map mode tabs ── */
+    .map-mode-tabs { flex-wrap: wrap; gap: 5px; }
+    .map-tab { font-size: 10px; padding: 4px 8px; }
+
+    /* ── Splits table: smaller cells ── */
+    .splits-table th { font-size: 9px; padding: 5px 8px; }
+    .splits-table td { font-size: 11px; padding: 7px 8px; }
+
+    /* ── Notable moments / spikes ── */
+    .spike-icon { width: 28px; height: 28px; font-size: 12px; }
+    .spike-title  { font-size: 12px; }
+    .spike-detail { font-size: 10px; }
+
+    /* ── Analyse / copy wrap ── */
+    .analyse-wrap  { padding: 12px 14px; }
+    .btn-analyse   { font-size: 12px; padding: 9px 16px; }
+
+    /* ── Auth screen ── */
+    .auth-title { font-size: 26px; }
+    .auth-sub   { font-size: 13px; }
+    .btn-strava { font-size: 14px; padding: 12px 22px; }
+
+    /* ── Effort / notes inputs ── */
+    .effort-lbl  { min-width: 100px; font-size: 11px; }
+    .effort-wrap { padding: 12px 14px; }
+
+    /* ── Whoop tables — allow scroll ── */
+    #whoop-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* ── Best efforts rows ── */
+    /* already flex rows, should be fine at 14px screen size */
+
+    /* ── Scrollbar: slightly wider for touch ── */
+    ::-webkit-scrollbar { width: 3px; }
+
+    /* ── Loading ── */
+    .loading-state { min-height: 140px; font-size: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -1496,7 +1642,11 @@ async function selectActivity(id, pushHistory = true) {
   document.getElementById('empty-state').style.display = 'none';
   const detail = document.getElementById('detail');
   detail.style.display = 'block';
-  detail.innerHTML = `<div class="loading-state"><div class="spinner"></div> Loading stream data…</div>`;
+  // On mobile the sidebar is hidden, so inject a sticky back-to-feed bar at the top of detail
+  const mobileBack = window.innerWidth <= 767
+    ? `<div onclick="goBackToFeed()" style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);position:sticky;top:0;z-index:50;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;"><path d="M19 12H5m7-7-7 7 7 7"/></svg>All runs</div>`
+    : '';
+  detail.innerHTML = mobileBack + `<div class="loading-state"><div class="spinner"></div> Loading stream data…</div>`;
 
   try {
     [streamData, detailedActivity] = await Promise.all([
