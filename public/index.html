@@ -342,6 +342,55 @@
     .tl-chart-wrap { height: 260px; }
   }
 
+  /* ─── OVERVIEW PAGE ─── */
+  #overview-page { height: 100%; overflow-y: auto; }
+  .ov-inner { max-width: 1020px; margin: 0 auto; padding: 40px; box-sizing: border-box; }
+  .ov-title { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .ov-sub { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 24px; }
+  .ov-period-tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+  .ov-period-btn { font-family: var(--mono); font-size: 11px; padding: 4px 12px; border-radius: 5px; border: 1px solid var(--border2); background: none; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .ov-period-btn:hover { border-color: var(--orange-glow); color: var(--text); }
+  .ov-period-btn.active { background: var(--orange); border-color: var(--orange); color: white; }
+  .ov-tiles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .ov-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .ov-tile-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); font-family: var(--mono); margin-bottom: 8px; }
+  .ov-tile-val { font-size: 26px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 5px; }
+  .ov-tile-cmp { font-size: 11px; color: var(--faint); font-family: var(--mono); }
+  .ov-types-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 28px; padding-top: 4px; }
+  .ov-section-head { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); font-family: var(--mono); padding-top: 24px; margin-bottom: 14px; border-top: 1px solid var(--border); }
+  .ov-vol-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .ov-chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px 12px; height: 220px; margin-bottom: 8px; box-sizing: border-box; }
+  .ov-vol-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  .ov-vol-legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--faint); font-family: var(--mono); }
+  .ov-cal-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .ov-cal-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; flex: 1; text-align: center; }
+  .ov-cal-nav { background: none; border: 1px solid var(--border2); color: var(--muted); border-radius: 6px; padding: 5px 12px; font-size: 14px; cursor: pointer; transition: all 0.15s; line-height: 1; }
+  .ov-cal-nav:hover, .ov-cal-today:hover { border-color: var(--orange-glow); color: var(--orange); }
+  .ov-cal-today { background: none; border: 1px solid var(--border2); color: var(--muted); border-radius: 6px; padding: 5px 10px; font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .ov-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .ov-day-hdr { font-size: 10px; text-align: center; color: var(--faint); font-family: var(--mono); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 0 10px; }
+  .ov-day { min-height: 84px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 6px 5px; transition: border-color 0.1s; }
+  .ov-day-blank { background: transparent !important; border-color: transparent !important; pointer-events: none; }
+  .ov-day-today { border-color: var(--orange-glow) !important; background: var(--orange-dim) !important; }
+  .ov-day-future { opacity: 0.4; }
+  .ov-day-num { font-size: 11px; font-family: var(--mono); color: var(--faint); font-weight: 500; margin-bottom: 5px; line-height: 1; }
+  .ov-day-today .ov-day-num { color: var(--orange); font-weight: 700; }
+  .ov-run-chip { font-size: 9px; font-family: var(--mono); font-weight: 700; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: filter 0.1s; display: block; line-height: 1.4; }
+  .ov-run-chip:hover { filter: brightness(1.25); }
+  .ov-run-more { font-size: 9px; color: var(--faint); font-family: var(--mono); padding-left: 2px; }
+  .ov-heatmap-box { width: 100%; height: 500px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  .ov-heatmap-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 11px; color: var(--faint); font-family: var(--mono); }
+  @media (max-width: 767px) {
+    .ov-heatmap-box { height: 300px; }
+    .ov-inner { padding: 20px 14px; }
+    .ov-tiles-grid { grid-template-columns: repeat(2, 1fr); }
+    .ov-tile-val { font-size: 20px; }
+    .ov-day { min-height: 48px; padding: 4px 3px; }
+    .ov-day-hdr { font-size: 9px; letter-spacing: 0; padding-bottom: 6px; }
+    .ov-run-chip { font-size: 0; line-height: 0; padding: 0; height: 5px; margin-bottom: 2px; border-radius: 2px; }
+    .ov-run-more { display: none; }
+  }
+
   /* ─── INSIGHTS PAGE ─── */
   #insights-page { height: 100%; overflow-y: auto; }
   .ins-inner { max-width: 960px; margin: 0 auto; padding: 40px; box-sizing: border-box; }
@@ -403,10 +452,26 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     height: 100%; gap: 14px; text-align: center; padding: 40px;
   }
+  .ins-tabs { display: flex; gap: 0; margin-bottom: 32px; border-bottom: 1px solid var(--border); }
+  .ins-page-tab {
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    padding: 10px 20px; border: none; border-bottom: 3px solid transparent;
+    background: none; color: var(--muted); cursor: pointer; margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .ins-page-tab:hover { color: var(--text); }
+  .ins-page-tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+  .ae-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+  .ae-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; transition: border-color 0.2s; }
+  .ae-stat-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); font-family: var(--mono); margin-bottom: 10px; }
+  .ae-stat-val { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; }
+  .ae-stat-sub { font-size: 11px; color: var(--faint); font-family: var(--mono); }
+  .ae-section-head { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); font-family: var(--mono); margin-bottom: 14px; }
   @media (max-width: 767px) {
     .ins-inner { padding: 20px 14px; }
     .ins-r-val { font-size: 42px; }
     .ins-chart-wrap { height: 280px; }
+    .ae-stats-grid { grid-template-columns: repeat(3, 1fr); }
   }
 
   /* ─── CONNECTIONS PAGE ─── */
@@ -1107,6 +1172,69 @@
 
     /* ── Loading ── */
     .loading-state { min-height: 140px; font-size: 12px; }
+
+    /* ── Nav: horizontally scrollable — fits all 7 tabs without wrapping ── */
+    .topbar-nav {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      justify-content: flex-start;
+      flex: 1;
+    }
+    .topbar-nav::-webkit-scrollbar { display: none; }
+    .nav-tab { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
+    /* Connection pills take too much space on mobile — managed via nav instead */
+    #conn-status-bar { display: none !important; }
+
+    /* ── PR Board ── */
+    .prb-totals      { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .prb-hero-grid   { grid-template-columns: 1fr; }
+    .prb-dist-grid   { grid-template-columns: repeat(2, 1fr); }
+    .prb-feats-grid  { grid-template-columns: repeat(2, 1fr); }
+    .prb-hero-val    { font-size: 34px; }
+    .prb-dist-time   { font-size: 22px; }
+    .prb-feat-val    { font-size: 20px; }
+    .prb-hero-card   { padding: 18px 16px; }
+
+    /* ── Training Load ── */
+    .tl-toolbar      { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .tl-chart-wrap   { height: 240px; }
+    .tl-heading      { font-size: 17px; }
+    .tl-legend       { gap: 10px; }
+    .tl-export-row   { gap: 6px; }
+    .tl-export-btn   { font-size: 10px; padding: 4px 9px; }
+
+    /* ── Insights page tabs ── */
+    .ins-tabs        { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .ins-tabs::-webkit-scrollbar { display: none; }
+    .ins-page-tab    { white-space: nowrap; padding: 8px 14px; font-size: 12px; }
+    .ins-hero        { padding: 24px 14px 20px; }
+    .ins-r-val       { font-size: 40px; }
+    .ins-r-desc      { font-size: 12px; }
+    .ins-chart-wrap  { height: 260px; }
+    .ins-bands-grid  { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .ins-band-val    { font-size: 22px; }
+    .ae-stats-grid   { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .ae-stat-val     { font-size: 22px; }
+    .ae-section-head { font-size: 9px; }
+
+    /* ── Connections page ── */
+    .connections-page { padding: 24px 16px; }
+    .conn-grid        { flex-direction: column; }
+    .conn-card        { min-width: 0; }
+
+    /* ── Overview page ── */
+    .ov-chart-wrap   { height: 180px; }
+    .ov-tiles-grid   { gap: 8px; }
+    .ov-tile         { padding: 14px; }
+    .ov-tile-val     { font-size: 20px; }
+    .ov-section-head { font-size: 9px; padding-top: 18px; }
+    .ov-vol-header   { flex-direction: column; gap: 4px; }
+    .ov-vol-legend   { gap: 10px; }
+    .ov-cal-title    { font-size: 14px; }
+
+    /* ── Map satellite toggle — wrap with other tabs ── */
+    #sat-toggle-btn  { margin-left: 0 !important; }
   }
 </style>
 </head>
@@ -1124,6 +1252,7 @@
     </div>
     <nav class="topbar-nav" id="topbar-nav" style="display:none;">
       <button class="nav-tab active" data-page="activities" onclick="showPage('activities')">Activities</button>
+      <button class="nav-tab" data-page="overview" onclick="showPage('overview')">Overview</button>
       <button class="nav-tab" data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
       <button class="nav-tab" data-page="training" onclick="showPage('training')">Training Load</button>
       <button class="nav-tab" data-page="insights" onclick="showPage('insights')">Insights</button>
@@ -1253,6 +1382,9 @@
     <!-- ACTIVITY DETAIL (hidden until an activity is selected) -->
     <div class="empty-state" id="empty-state" style="display:none;"><div class="empty-icon">👟</div><p>Select a run from the sidebar</p></div>
     <div id="detail" style="display:none;"></div>
+
+    <!-- OVERVIEW PAGE -->
+    <div id="overview-page" style="display:none;"></div>
 
     <!-- INSIGHTS PAGE -->
     <div id="insights-page" style="display:none;"></div>
@@ -2148,7 +2280,11 @@ function setNavActive(page) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.page === page));
 }
 
-function showPage(page) {
+function showPage(page, pushHistory = true) {
+  if (pushHistory) {
+    const url = page === 'activities' ? '/' : `/${page}`;
+    history.pushState({ page }, '', url);
+  }
   setNavActive(page);
   const shell = document.querySelector('.shell');
   const feed       = document.getElementById('home-feed');
@@ -2160,6 +2296,7 @@ function showPage(page) {
   const trainPage    = document.getElementById('training-page');
   const prPage       = document.getElementById('pr-board-page');
   const insightsPage = document.getElementById('insights-page');
+  const overviewPage = document.getElementById('overview-page');
 
   // Hide everything
   feed.style.display          = 'none';
@@ -2169,6 +2306,7 @@ function showPage(page) {
   trainPage.style.display     = 'none';
   prPage.style.display        = 'none';
   insightsPage.style.display  = 'none';
+  overviewPage.style.display  = 'none';
   sidebar.style.display       = 'none';
   shell.classList.remove('sidebar-open');
   document.getElementById('copy-btn').style.display = 'none';
@@ -2186,6 +2324,9 @@ function showPage(page) {
     } else {
       emptyState.style.display = 'flex';
     }
+  } else if (page === 'overview') {
+    overviewPage.style.display = 'block';
+    renderOverviewPage();
   } else if (page === 'insights') {
     insightsPage.style.display = 'block';
     renderInsightsPage();
@@ -2206,6 +2347,10 @@ let whoopRecoveryHistory = null;
 let insightsChart        = null;
 let insightsFilter       = 'all';
 let insightsPairs        = [];
+let aerobicScatterChart  = null;
+let aerobicTimelineChart = null;
+let currentInsightsTab   = 'aerobic';
+let aeFilter             = 'easy';
 
 const WHOOP_HISTORY_CACHE_KEY = 'synorra_whoop_hist_v1';
 
@@ -2451,104 +2596,581 @@ function updateInsightHero(pairs, r) {
 async function renderInsightsPage() {
   const el = document.getElementById('insights-page');
   if (!el) return;
-
-  if (!getWhoopToken()) {
-    el.innerHTML = `<div class="ins-empty">
-      <div style="font-size:36px;">📡</div>
-      <div style="font-size:16px;font-weight:700;letter-spacing:-0.02em;">Connect Whoop to unlock insights</div>
-      <div style="font-size:13px;color:var(--muted);font-family:var(--mono);max-width:400px;line-height:1.7;">Recovery vs performance correlation requires your Whoop recovery data. Connect your Whoop on the Connections page.</div>
-      <button onclick="showPage('connections')" style="margin-top:8px;background:var(--whoop);color:white;border:none;padding:10px 24px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">Go to Connections</button>
-    </div>`;
-    return;
-  }
-
-  el.innerHTML = `<div class="ins-empty"><div class="spinner" style="border-top-color:var(--whoop);"></div><div style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:12px;">Fetching Whoop recovery history…</div></div>`;
-
-  const recovery = await fetchWhoopRecoveryHistory();
-
-  if (!recovery || !recovery.length) {
-    el.innerHTML = `<div class="ins-empty">
-      <div style="font-size:32px;">😴</div>
-      <div style="font-size:15px;font-weight:600;">No Whoop recovery data found</div>
-      <div style="font-size:12px;color:var(--muted);font-family:var(--mono);max-width:420px;line-height:1.7;">This may be a CORS restriction from calling Whoop directly from the browser. If you see errors in the console, a backend proxy may be needed.</div>
-    </div>`;
-    return;
-  }
-
-  insightsPairs = matchRunsWithRecovery(recovery);
-
-  if (!insightsPairs.length) {
-    el.innerHTML = `<div class="ins-empty">
-      <div style="font-size:32px;">🔗</div>
-      <div style="font-size:15px;font-weight:600;">No matched pairs yet</div>
-      <div style="font-size:12px;color:var(--muted);font-family:var(--mono);max-width:420px;line-height:1.7;">Your Strava runs and Whoop recovery records don't overlap in date yet, or the dates don't align. Make sure Whoop is syncing regularly.</div>
-    </div>`;
-    return;
-  }
-
-  const allTypes = Object.entries(
-    insightsPairs.reduce((m, p) => { m[p.type] = (m[p.type] || 0) + 1; return m; }, {})
-  ).filter(([, n]) => n >= 3);
-
-  const r      = pearsonR(insightsPairs.map(p => p.recovery), insightsPairs.map(p => p.eff));
-  const bands  = bandStats(insightsPairs);
-  const insight = insightText(insightsPairs, r, bands);
-  const earliest = insightsPairs.reduce((a, b) => a.date < b.date ? a : b).date;
-  const fmtDateS = s => new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
-  const filterBtns = [
-    ['all', 'All runs', insightsPairs.length],
-    ...allTypes.map(([t, n]) => [t, RUN_TYPES[t]?.label || t, n])
-  ].map(([k, lbl, n]) =>
-    `<button class="ins-filter-btn ${k === insightsFilter ? 'active' : ''}" onclick="setInsightFilter('${k}',this)">${lbl} <span style="opacity:0.45;">(${n})</span></button>`
-  ).join('');
-
-  const bandCard = (label, color, band) => `<div class="ins-band-card">
-    <div class="ins-band-zone" style="color:${color};">${label}</div>
-    ${band.avg !== null
-      ? `<div class="ins-band-val" style="color:${color};">${band.avg}</div><div class="ins-band-n">${band.n} run${band.n !== 1 ? 's' : ''}</div>`
-      : `<div class="ins-band-val" style="color:var(--faint);">—</div><div class="ins-band-n">no data</div>`}
-  </div>`;
-
+  [insightsChart, aerobicScatterChart, aerobicTimelineChart].forEach(c => { if (c) c.destroy(); });
+  insightsChart = aerobicScatterChart = aerobicTimelineChart = null;
   el.innerHTML = `<div class="ins-inner">
-    <div class="ins-title">Recovery &amp; Performance</div>
-    <div class="ins-sub">Whoop recovery score vs running efficiency · ${insightsPairs.length} matched runs · since ${fmtDateS(earliest)}</div>
-
-    <div class="ins-hero">
-      <div class="ins-hero-lbl">Pearson Correlation Coefficient</div>
-      <div class="ins-r-val" id="ins-r-val" style="color:${rColor(r)};">${r !== null ? 'r = ' + r.toFixed(2) : '—'}</div>
-      <div class="ins-r-desc" id="ins-r-desc">${rLabel(r)}</div>
-      <div class="ins-r-n" id="ins-r-n">${insightsPairs.length} runs matched with recovery data</div>
+    <div class="ins-title">Insights</div>
+    <div class="ins-sub">Training analysis and performance trends</div>
+    <div class="ins-tabs">
+      <button class="ins-page-tab ${currentInsightsTab==='aerobic'?'active':''}" data-tab="aerobic" onclick="switchInsightsTab('aerobic')">Aerobic Efficiency</button>
+      <button class="ins-page-tab ${currentInsightsTab==='recovery'?'active':''}" data-tab="recovery" onclick="switchInsightsTab('recovery')">Recovery Correlation</button>
     </div>
-
-    <div class="ins-filter-row">${filterBtns}</div>
-
-    <div class="ins-chart-wrap"><canvas id="ins-canvas"></canvas></div>
-
-    <div class="ins-legend">
-      <div class="ins-legend-item"><span class="ins-dot" style="background:#4ade80;"></span>Green recovery (67–100)</div>
-      <div class="ins-legend-item"><span class="ins-dot" style="background:#fbbf24;"></span>Yellow (34–66)</div>
-      <div class="ins-legend-item"><span class="ins-dot" style="background:#f87171;"></span>Red (0–33)</div>
-      <div class="ins-legend-item"><span class="ins-trend-line"></span>Trend line · click any dot to open that run</div>
-    </div>
-
-    <div class="ins-bands-grid">
-      ${bandCard('🟢 Green days', '#4ade80', bands.green)}
-      ${bandCard('🟡 Yellow days', '#fbbf24', bands.yellow)}
-      ${bandCard('🔴 Red days', '#f87171', bands.red)}
-    </div>
-
-    <div class="ins-insight-box">
-      <div class="ins-insight-icon">💡</div>
-      <div>${insight}</div>
-    </div>
-
-    <div class="ins-note">
-      <strong>HR Efficiency</strong> = average speed ÷ average heart rate × 1000. Higher is better — it means you ran faster relative to your heart's effort that day, a proxy for aerobic readiness. Each dot is one Strava run matched to your Whoop recovery score from the same morning. Click any dot to open that run.
-    </div>
+    <div id="ins-tab-content"></div>
   </div>`;
+  const container = document.getElementById('ins-tab-content');
+  if (currentInsightsTab === 'aerobic') renderAerobicTab(container);
+  else await renderWhoopTab(container);
+}
 
+async function switchInsightsTab(tab) {
+  currentInsightsTab = tab;
+  document.querySelectorAll('.ins-page-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  [insightsChart, aerobicScatterChart, aerobicTimelineChart].forEach(c => { if (c) c.destroy(); });
+  insightsChart = aerobicScatterChart = aerobicTimelineChart = null;
+  const container = document.getElementById('ins-tab-content');
+  if (!container) return;
+  if (tab === 'aerobic') renderAerobicTab(container);
+  else await renderWhoopTab(container);
+}
+
+// AEROBIC EFFICIENCY TAB
+function computeAerobicPairs(filter) {
+  filter = filter || 'easy';
+  const EASY  = new Set(['easy','moderate','longRun','recovery']);
+  const AEROB = new Set(['easy','moderate','longRun','recovery','tempo']);
+  return activities
+    .filter(a => {
+      if (!a.average_heartrate || !a.average_speed || a.distance < 2000) return false;
+      const t = runTypeCache[a.id] || 'easy';
+      if (filter === 'easy')    return EASY.has(t);
+      if (filter === 'aerobic') return AEROB.has(t);
+      return true;
+    })
+    .map(a => ({
+      date: a.start_date_local.slice(0, 10),
+      pace: +(1000 / (a.average_speed * 60)).toFixed(3),
+      hr:   Math.round(a.average_heartrate),
+      eff:  +((a.average_speed / a.average_heartrate) * 1000).toFixed(2),
+      type: runTypeCache[a.id] || 'easy',
+      activity: a
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function aeGradColor(date, minDate, maxDate, alpha) {
+  alpha = alpha === undefined ? 0.78 : alpha;
+  const t = maxDate > minDate ? Math.max(0, Math.min(1, (new Date(date) - new Date(minDate)) / (new Date(maxDate) - new Date(minDate)))) : 0.5;
+  return 'rgba(' + Math.round(96+(252-96)*t) + ',' + Math.round(165+(76-165)*t) + ',' + Math.round(250+(2-250)*t) + ',' + alpha + ')';
+}
+
+function fmtPaceTick(v) {
+  const m = Math.floor(v), s = Math.round((v - m) * 60);
+  return m + ':' + String(s).padStart(2,'0');
+}
+
+function computeRollingAvg(pairs, days) {
+  days = days || 28;
+  return pairs.map(p => {
+    const cut = new Date(p.date + 'T00:00:00'); cut.setDate(cut.getDate() - days);
+    const w = pairs.filter(q => q.date >= cut.toISOString().slice(0,10) && q.date <= p.date);
+    return +(w.reduce((s, q) => s + q.eff, 0) / w.length).toFixed(2);
+  });
+}
+
+function setAeFilter(f, btn) {
+  aeFilter = f;
+  document.querySelectorAll('.ae-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildAeCharts();
+}
+
+function buildAeCharts() {
+  const pairs = computeAerobicPairs(aeFilter);
+  buildAeScatter(pairs);
+  buildAeTimeline(pairs);
+  updateAeStats(pairs);
+  const el = document.getElementById('ae-insight-text');
+  if (el) el.innerHTML = aerobicInsightText(pairs);
+}
+
+function buildAeScatter(pairs) {
+  const canvas = document.getElementById('ae-scatter-canvas');
+  if (!canvas) return;
+  if (aerobicScatterChart) { aerobicScatterChart.destroy(); aerobicScatterChart = null; }
+  if (pairs.length < 3) {
+    canvas.parentElement.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--faint);font-family:var(--mono);font-size:12px;">Not enough data for this filter (' + pairs.length + ' run' + (pairs.length!==1?'s':'') + ')</div>';
+    return;
+  }
+  const minDate = pairs[0].date, maxDate = pairs[pairs.length-1].date;
+  aerobicScatterChart = new Chart(canvas, {
+    type: 'scatter',
+    data: { datasets: [{ data: pairs.map(p => ({ x: p.pace, y: p.hr })),
+      pointRadius: pairs.map(p => Math.min(10, Math.max(5, (p.activity.distance/1000) * 0.38))),
+      pointHoverRadius: 13,
+      pointBackgroundColor: pairs.map(p => aeGradColor(p.date, minDate, maxDate, 0.78)),
+      pointBorderColor:     pairs.map(p => aeGradColor(p.date, minDate, maxDate, 1.0)),
+      pointBorderWidth: 1.5,
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      onClick: function(_, els) { if (els.length) { const p = pairs[els[0].index]; if (p && p.activity && p.activity.id) selectActivity(p.activity.id); } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e2021', borderColor: 'rgba(255,255,255,0.12)', borderWidth: 1,
+          titleFont: { family: 'DM Mono', size: 11 }, bodyFont: { family: 'DM Mono', size: 11 },
+          callbacks: {
+            title: function(items) { return new Date(pairs[items[0].dataIndex].date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); },
+            label: function(item) { const p = pairs[item.dataIndex]; const rt = RUN_TYPES[p.type]||RUN_TYPES.easy; return [' ' + (p.activity.name||'Run'), ' Pace: ' + fmtPaceTick(p.pace) + '/km', ' Avg HR: ' + p.hr + ' bpm', ' ' + rt.label + ' · ' + ((p.activity.distance||0)/1000).toFixed(1) + 'km', ' Click to open run']; }
+          }
+        }
+      },
+      scales: {
+        x: { title:{display:true,text:'← Faster    Pace (min/km)    Slower →',color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:11}}, ticks:{color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:10},callback:function(v){return fmtPaceTick(v);}}, grid:{color:'rgba(255,255,255,0.05)'} },
+        y: { title:{display:true,text:'Avg Heart Rate (bpm)  ↓ lower = more efficient at same pace',color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:11}}, ticks:{color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:10}}, grid:{color:'rgba(255,255,255,0.05)'} }
+      }
+    }
+  });
+}
+
+function buildAeTimeline(pairs) {
+  const canvas = document.getElementById('ae-timeline-canvas');
+  if (!canvas) return;
+  if (aerobicTimelineChart) { aerobicTimelineChart.destroy(); aerobicTimelineChart = null; }
+  if (pairs.length < 5) {
+    canvas.parentElement.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--faint);font-family:var(--mono);font-size:12px;">Not enough data</div>';
+    return;
+  }
+  const labels = pairs.map(p => p.date);
+  const rolling = computeRollingAvg(pairs, 28);
+  function fmtL(s) { return new Date((s||'')+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+  aerobicTimelineChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels: labels, datasets: [
+      { label:'Run', data:pairs.map(p=>p.eff), borderWidth:0, showLine:false, pointRadius:3, pointHoverRadius:6, pointBackgroundColor:'rgba(136,133,128,0.38)', pointBorderColor:'transparent', order:2 },
+      { label:'28d avg', data:rolling, borderColor:'#FC4C02', borderWidth:2.5, backgroundColor:'rgba(252,76,2,0.07)', fill:true, tension:0.4, pointRadius:0, order:1 }
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display:false },
+        tooltip: { backgroundColor:'#1e2021', borderColor:'rgba(255,255,255,0.12)', borderWidth:1, titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'DM Mono',size:11},
+          callbacks: { title: function(items){return fmtL(labels[items[0].dataIndex]);}, label: function(item){return item.datasetIndex===1?' 28-day avg: '+item.raw:' Run: '+item.raw;} } }
+      },
+      scales: {
+        x: { ticks:{color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:10},maxTicksLimit:8,maxRotation:0,callback:function(_,i){return fmtL(labels[i]);}}, grid:{display:false} },
+        y: { title:{display:true,text:'HR Efficiency (higher = better)',color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:11}}, ticks:{color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:10}}, grid:{color:'rgba(255,255,255,0.05)'} }
+      }
+    }
+  });
+}
+
+function updateAeStats(pairs) {
+  const el = document.getElementById('ae-stats');
+  if (!el) return;
+  const now = new Date();
+  const d4  = new Date(now); d4.setDate(now.getDate()-28);
+  const d12 = new Date(now); d12.setDate(now.getDate()-84);
+  const d16 = new Date(now); d16.setDate(now.getDate()-112);
+  const recent  = pairs.filter(p => p.date >= d4.toISOString().slice(0,10));
+  const earlier = pairs.filter(p => p.date >= d16.toISOString().slice(0,10) && p.date < d12.toISOString().slice(0,10));
+  function avg(arr) { return arr.length ? +(arr.reduce((s,p)=>s+p.eff,0)/arr.length).toFixed(1) : null; }
+  const ra = avg(recent), ea = avg(earlier);
+  let cc='var(--muted)', arrow='→', pctStr='—', lbl='Need more data';
+  if (ra && ea) {
+    const pct = +((ra-ea)/ea*100).toFixed(1);
+    pctStr = Math.abs(pct) + '%';
+    if (pct > 1.5)  { cc='#4ade80'; arrow='↑'; lbl='More efficient'; }
+    else if (pct < -1.5) { cc='#f87171'; arrow='↓'; lbl='Less efficient'; }
+    else { cc='#fbbf24'; arrow='→'; lbl='Stable'; }
+  }
+  el.innerHTML =
+    '<div class="ae-stat-card"><div class="ae-stat-lbl">Recent (4 weeks)</div><div class="ae-stat-val">' + (ra||'—') + '</div><div class="ae-stat-sub">' + recent.length + ' runs</div></div>' +
+    '<div class="ae-stat-card"><div class="ae-stat-lbl">3 months ago</div><div class="ae-stat-val">' + (ea||'—') + '</div><div class="ae-stat-sub">' + earlier.length + ' runs</div></div>' +
+    '<div class="ae-stat-card" style="' + (ra&&ea ? 'border-color:' + cc + '30;background:' + cc + '08;' : '') + '"><div class="ae-stat-lbl">Change</div><div class="ae-stat-val" style="color:' + cc + ';">' + arrow + ' ' + pctStr + '</div><div class="ae-stat-sub" style="color:' + cc + ';">' + lbl + '</div></div>';
+}
+
+function aerobicInsightText(pairs) {
+  const n = pairs.length;
+  if (n < 5) return 'Only ' + n + ' run' + (n!==1?'s':'') + ' in this filter — log more to see your aerobic efficiency develop.';
+  const now = new Date();
+  const d4  = new Date(now); d4.setDate(now.getDate()-28);
+  const d12 = new Date(now); d12.setDate(now.getDate()-84);
+  const d16 = new Date(now); d16.setDate(now.getDate()-112);
+  const recent  = pairs.filter(p => p.date >= d4.toISOString().slice(0,10));
+  const earlier = pairs.filter(p => p.date >= d16.toISOString().slice(0,10) && p.date < d12.toISOString().slice(0,10));
+  function avg(arr) { return arr.length ? arr.reduce((s,p)=>s+p.eff,0)/arr.length : null; }
+  const ra = avg(recent), ea = avg(earlier);
+  if (!ra) return 'No recent runs in this filter. Get out there and the tracking will resume automatically.';
+  if (!ea) return 'Efficiency tracking at <strong>' + ra.toFixed(1) + '</strong> over the last 4 weeks. Keep logging runs to build a historical baseline for comparison.';
+  const pct = +((ra-ea)/ea*100).toFixed(1);
+  if (pct >  3) return 'Your aerobic base is growing — efficiency improved <strong>' + pct + '%</strong> over the past few months. The scatter dots are shifting lower-left: faster running at a lower heart rate. Keep the easy miles consistent to lock this in.';
+  if (pct < -3) return 'Efficiency dipped <strong>' + Math.abs(pct) + '%</strong> compared to a few months ago. This can reflect accumulated fatigue, higher load, or less easy running. A lighter week may help restore it.';
+  return 'Aerobic efficiency is steady at around <strong>' + ra.toFixed(1) + '</strong> — maintaining your current base. To push the dots towards the lower-left, prioritise consistent easy mileage with full recovery between hard sessions.';
+}
+
+function renderAerobicTab(container) {
+  if (!container) return;
+  const allPairs = computeAerobicPairs('all');
+  if (allPairs.length < 3) {
+    container.innerHTML = '<div class="ins-empty"><div style="font-size:36px;">📊</div><div style="font-size:15px;font-weight:600;">Not enough HR data yet</div><div style="font-size:12px;color:var(--muted);font-family:var(--mono);max-width:420px;line-height:1.7;">Run with a heart rate monitor and this chart will build automatically. ' + (allPairs.length>0 ? 'You have ' + allPairs.length + ' run with HR data so far.' : 'No HR data found yet.') + '</div></div>';
+    return;
+  }
+  const minDate = allPairs[0].date, maxDate = allPairs[allPairs.length-1].date;
+  function fmtS(s) { return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+  const activeEasy    = aeFilter==='easy'    ? 'active' : '';
+  const activeAerobic = aeFilter==='aerobic' ? 'active' : '';
+  const activeAll     = aeFilter==='all'     ? 'active' : '';
+  container.innerHTML =
+    '<div style="margin-bottom:24px;font-size:12px;color:var(--muted);font-family:var(--mono);">' + allPairs.length + ' runs with HR data · ' + fmtS(minDate) + ' – ' + fmtS(maxDate) + '</div>' +
+    '<div class="ae-stats-grid" id="ae-stats"></div>' +
+    '<div class="ae-section-head">HR vs Pace — dots coloured oldest (blue) to most recent (orange)</div>' +
+    '<div class="ins-filter-row">' +
+      '<button class="ae-filter-btn ins-filter-btn ' + activeEasy + '" onclick="setAeFilter(\'easy\',this)">Easy &amp; Long runs</button>' +
+      '<button class="ae-filter-btn ins-filter-btn ' + activeAerobic + '" onclick="setAeFilter(\'aerobic\',this)">All aerobic</button>' +
+      '<button class="ae-filter-btn ins-filter-btn ' + activeAll + '" onclick="setAeFilter(\'all\',this)">All runs</button>' +
+    '</div>' +
+    '<div class="ins-chart-wrap" style="height:400px;"><canvas id="ae-scatter-canvas"></canvas></div>' +
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;padding:0 2px;">' +
+      '<span style="font-size:10px;color:var(--faint);font-family:var(--mono);white-space:nowrap;">' + fmtS(minDate) + '</span>' +
+      '<div style="flex:1;height:6px;border-radius:3px;background:linear-gradient(to right,#60a5fa,#FC4C02);opacity:0.8;"></div>' +
+      '<span style="font-size:10px;color:var(--faint);font-family:var(--mono);white-space:nowrap;">' + fmtS(maxDate) + '</span>' +
+    '</div>' +
+    '<div class="ae-section-head">HR Efficiency over time — 28-day rolling average</div>' +
+    '<div class="ins-chart-wrap" style="height:260px;margin-bottom:16px;"><canvas id="ae-timeline-canvas"></canvas></div>' +
+    '<div class="ins-legend" style="margin-bottom:24px;">' +
+      '<div class="ins-legend-item"><span class="ins-dot" style="background:rgba(136,133,128,0.5);"></span>Individual run</div>' +
+      '<div class="ins-legend-item"><span style="display:inline-block;width:22px;height:3px;background:#FC4C02;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>28-day rolling average</div>' +
+      '<div class="ins-legend-item" style="font-size:10px;color:var(--faint);">Dot size = distance · click any dot on scatter to open that run</div>' +
+    '</div>' +
+    '<div class="ins-insight-box"><div class="ins-insight-icon">💡</div><div id="ae-insight-text"></div></div>' +
+    '<div class="ins-note"><strong>Reading the scatter:</strong> Each dot is one run. If fitness is improving, recent dots (orange) will cluster lower-left vs older dots (blue) — same pace at a lower heart rate, or faster at the same heart rate. Easy &amp; Long runs gives the clearest signal.<br><br><strong>Efficiency score</strong> = speed ÷ avg HR × 1000 (higher = more aerobically efficient). Dot size reflects distance.</div>';
+  buildAeCharts();
+}
+
+// WHOOP CORRELATION TAB
+async function renderWhoopTab(container) {
+  if (!container) return;
+  if (!getWhoopToken()) {
+    container.innerHTML = '<div class="ins-empty"><div style="font-size:36px;">📡</div><div style="font-size:16px;font-weight:700;letter-spacing:-0.02em;">Connect Whoop to unlock this tab</div><div style="font-size:13px;color:var(--muted);font-family:var(--mono);max-width:400px;line-height:1.7;">Recovery vs performance correlation requires Whoop data.</div><button onclick="showPage(\'connections\')" style="margin-top:8px;background:var(--whoop);color:white;border:none;padding:10px 24px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">Go to Connections</button></div>';
+    return;
+  }
+  container.innerHTML = '<div class="ins-empty"><div class="spinner" style="border-top-color:var(--whoop);"></div><div style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:12px;">Fetching Whoop recovery history…</div></div>';
+  const recovery = await fetchWhoopRecoveryHistory();
+  if (!recovery || !recovery.length) {
+    container.innerHTML = '<div class="ins-empty"><div style="font-size:32px;">😴</div><div style="font-size:15px;font-weight:600;">No Whoop recovery data found</div><div style="font-size:12px;color:var(--muted);font-family:var(--mono);max-width:420px;line-height:1.7;">This may be a CORS restriction from calling Whoop directly from the browser. A backend proxy may be needed.</div></div>';
+    return;
+  }
+  insightsPairs = matchRunsWithRecovery(recovery);
+  if (!insightsPairs.length) {
+    container.innerHTML = '<div class="ins-empty"><div style="font-size:32px;">🔗</div><div style="font-size:15px;font-weight:600;">No matched pairs yet</div><div style="font-size:12px;color:var(--muted);font-family:var(--mono);max-width:420px;line-height:1.7;">Strava runs and Whoop recovery records do not overlap in date yet. Make sure Whoop is syncing regularly.</div></div>';
+    return;
+  }
+  const allTypes = Object.entries(insightsPairs.reduce(function(m,p){m[p.type]=(m[p.type]||0)+1;return m;},{})).filter(function(e){return e[1]>=3;});
+  const r = pearsonR(insightsPairs.map(p=>p.recovery), insightsPairs.map(p=>p.eff));
+  const bands = bandStats(insightsPairs);
+  const insight = insightText(insightsPairs, r, bands);
+  const earliest = insightsPairs.reduce(function(a,b){return a.date<b.date?a:b;}).date;
+  function fmtS(s){return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+  const filterBtns = [['all','All runs',insightsPairs.length],...allTypes.map(([t,n])=>[t,RUN_TYPES[t]?.label||t,n])].map(([k,lbl,n])=>`<button class="ins-filter-btn ${k===insightsFilter?'active':''}" onclick="setInsightFilter('${k}',this)">${lbl} <span style="opacity:0.45;">(${n})</span></button>`).join('');
+  function bandCard(label,color,band){return '<div class="ins-band-card"><div class="ins-band-zone" style="color:'+color+';">'+label+'</div>'+(band.avg!==null?'<div class="ins-band-val" style="color:'+color+';">'+band.avg+'</div><div class="ins-band-n">'+band.n+' run'+(band.n!==1?'s':'')+'</div>':'<div class="ins-band-val" style="color:var(--faint);">—</div><div class="ins-band-n">no data</div>')+'</div>';}
+  container.innerHTML =
+    '<div class="ins-hero"><div class="ins-hero-lbl">Pearson Correlation Coefficient</div><div class="ins-r-val" id="ins-r-val" style="color:'+rColor(r)+';">'+(r!==null?'r = '+r.toFixed(2):'—')+'</div><div class="ins-r-desc" id="ins-r-desc">'+rLabel(r)+'</div><div class="ins-r-n" id="ins-r-n">'+insightsPairs.length+' runs matched · since '+fmtS(earliest)+'</div></div>' +
+    '<div class="ins-filter-row">'+filterBtns+'</div>' +
+    '<div class="ins-chart-wrap"><canvas id="ins-canvas"></canvas></div>' +
+    '<div class="ins-legend"><div class="ins-legend-item"><span class="ins-dot" style="background:#4ade80;"></span>Green (67–100)</div><div class="ins-legend-item"><span class="ins-dot" style="background:#fbbf24;"></span>Yellow (34–66)</div><div class="ins-legend-item"><span class="ins-dot" style="background:#f87171;"></span>Red (0–33)</div><div class="ins-legend-item"><span class="ins-trend-line"></span>Trend · click any dot to open that run</div></div>' +
+    '<div class="ins-bands-grid">'+bandCard('🟢 Green days','#4ade80',bands.green)+bandCard('🟡 Yellow days','#fbbf24',bands.yellow)+bandCard('🔴 Red days','#f87171',bands.red)+'</div>' +
+    '<div class="ins-insight-box"><div class="ins-insight-icon">💡</div><div>'+insight+'</div></div>' +
+    '<div class="ins-note"><strong>HR Efficiency</strong> = speed ÷ avg HR × 1000. Higher is better. Each dot is one run matched to that morning\'s Whoop score. Click any dot to open that run.</div>';
   buildInsightsChart();
+}
+
+
+// ─── OVERVIEW PAGE ───
+let currentCalendarMonth = new Date();
+let overviewPeriod       = 'month';
+let ovVolChart           = null;
+let heatmapLeaflet       = null;
+
+function getPeriodBounds(period) {
+  const now = new Date();
+  if (period === 'week') {
+    const d = new Date(now); d.setHours(0,0,0,0);
+    const day = d.getDay() || 7;
+    d.setDate(d.getDate() - (day - 1));          // rewind to Monday
+    const start    = new Date(d);
+    const end      = new Date(d); end.setDate(d.getDate() + 6); end.setHours(23,59,59,999);
+    const prevEnd  = new Date(start); prevEnd.setDate(start.getDate() - 1); prevEnd.setHours(23,59,59,999);
+    const prevStart = new Date(prevEnd); prevStart.setDate(prevEnd.getDate() - 6); prevStart.setHours(0,0,0,0);
+    return { start, end, prevStart, prevEnd, lbl: 'last week' };
+  }
+  const start     = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end       = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevEnd   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  return { start, end, prevStart, prevEnd, lbl: 'last month' };
+}
+
+function getPeriodStats(start, end) {
+  const runs = activities.filter(a => { const d = new Date(a.start_date_local); return d >= start && d <= end; });
+  const distKm  = runs.reduce((s,a) => s + (a.distance||0), 0) / 1000;
+  const secs    = runs.reduce((s,a) => s + (a.moving_time||0), 0);
+  const elevM   = runs.reduce((s,a) => s + (a.total_elevation_gain||0), 0);
+  const hrRuns  = runs.filter(a => a.average_heartrate);
+  const avgHR   = hrRuns.length ? Math.round(hrRuns.reduce((s,a) => s + a.average_heartrate, 0) / hrRuns.length) : null;
+  const spdRuns = runs.filter(a => a.average_speed > 0);
+  const avgSpd  = spdRuns.length ? spdRuns.reduce((s,a) => s + a.average_speed, 0) / spdRuns.length : null;
+  return { count: runs.length, distKm: +distKm.toFixed(1), secs, elevM: Math.round(elevM), avgHR, avgSpd, runs };
+}
+
+function ovCmp(curr, prev, lowerBetter, lbl) {
+  if (curr == null || prev == null || prev === 0 || curr === 0) return '';
+  const pct = Math.round((curr - prev) / Math.abs(prev) * 100);
+  if (Math.abs(pct) < 2) return `<span style="color:var(--faint);">→ Similar to ${lbl}</span>`;
+  const up = pct > 0;
+  const color = lowerBetter === null ? 'var(--muted)' : ((lowerBetter ? !up : up) ? '#4ade80' : '#f87171');
+  return `<span style="color:${color};">${up?'↑':'↓'} ${Math.abs(pct)}% vs ${lbl}</span>`;
+}
+
+function buildOvTiles(container, bounds) {
+  const curr = getPeriodStats(bounds.start, bounds.end);
+  const prev = getPeriodStats(bounds.prevStart, bounds.prevEnd);
+  const lbl  = bounds.lbl;
+  const fmtT = s => { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60); return h > 0 ? `${h}h ${m}m` : `${m}m`; };
+
+  const typeCounts = {};
+  curr.runs.forEach(a => { const t = runTypeCache[a.id]||'easy'; typeCounts[t] = (typeCounts[t]||0)+1; });
+  const typeChips = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]).map(([t,n]) => {
+    const rt = RUN_TYPES[t]||RUN_TYPES.easy;
+    return `<div style="display:inline-flex;align-items:center;gap:4px;background:${rt.bg};border:1px solid ${rt.border};color:${rt.color};font-size:10px;font-family:var(--mono);font-weight:600;padding:3px 9px;border-radius:4px;">${rt.label} ×${n}</div>`;
+  }).join('');
+
+  function tile(lbl, val, cmp) {
+    return `<div class="ov-tile"><div class="ov-tile-lbl">${lbl}</div><div class="ov-tile-val">${val}</div><div class="ov-tile-cmp">${cmp||'<span style="color:var(--faint);">—</span>'}</div></div>`;
+  }
+
+  container.innerHTML = `
+    <div class="ov-tiles-grid">
+      ${tile('Runs',       curr.count||'0',                         ovCmp(curr.count,  prev.count,  false, lbl))}
+      ${tile('Distance',   curr.distKm > 0 ? curr.distKm+'&thinsp;km' : '—',  ovCmp(curr.distKm, prev.distKm, false, lbl))}
+      ${tile('Moving time',curr.secs > 0 ? fmtT(curr.secs) : '—',            ovCmp(curr.secs,   prev.secs,   false, lbl))}
+      ${tile('Elevation',  curr.elevM > 0 ? curr.elevM+'&thinsp;m' : '—',    ovCmp(curr.elevM,  prev.elevM,  false, lbl))}
+      ${tile('Avg HR',     curr.avgHR ? curr.avgHR+'&thinsp;bpm' : '—',       ovCmp(curr.avgHR,  prev.avgHR,  null,  lbl))}
+      ${tile('Avg Pace',   curr.avgSpd ? fmtPace(curr.avgSpd)+'/km' : '—',   ovCmp(curr.avgSpd, prev.avgSpd, false, lbl))}
+    </div>
+    ${typeChips ? `<div class="ov-types-row">${typeChips}</div>` : ''}`;
+}
+
+function buildOvCalendar(container) {
+  const year  = currentCalendarMonth.getFullYear();
+  const month = currentCalendarMonth.getMonth();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const monthLabel = new Date(year, month, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const lastDate   = new Date(year, month + 1, 0).getDate();
+  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7; // 0=Mon
+
+  // Group activities by local date
+  const byDate = {};
+  activities.forEach(a => {
+    if (!a.start_date_local) return;
+    const ds = a.start_date_local.slice(0, 10);
+    if (!byDate[ds]) byDate[ds] = [];
+    byDate[ds].push(a);
+  });
+
+  const hdrs = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d =>
+    `<div class="ov-day-hdr">${d}</div>`).join('');
+
+  let cells = '';
+  for (let i = 0; i < startOffset; i++) cells += '<div class="ov-day ov-day-blank"></div>';
+
+  for (let d = 1; d <= lastDate; d++) {
+    const date    = new Date(year, month, d);
+    const dateStr = date.toISOString().slice(0, 10);
+    const runs    = byDate[dateStr] || [];
+    const isToday  = date.getTime() === today.getTime();
+    const isFuture = date > today;
+
+    const cls = 'ov-day' + (isToday ? ' ov-day-today' : '') + (isFuture ? ' ov-day-future' : '');
+
+    const chips = runs.slice(0, 3).map(a => {
+      const rt  = RUN_TYPES[runTypeCache[a.id]] || RUN_TYPES.easy;
+      const km  = ((a.distance||0)/1000).toFixed(1);
+      const tip = (a.name||'Run').replace(/"/g,'&quot;') + ' · ' + km + 'km';
+      return `<div class="ov-run-chip" style="background:${rt.color}28;border:1px solid ${rt.color}55;color:${rt.color};" onclick="selectActivity(${a.id})" title="${tip}">${km}km</div>`;
+    }).join('');
+    const more = runs.length > 3 ? `<div class="ov-run-more">+${runs.length-3} more</div>` : '';
+
+    cells += `<div class="${cls}"><div class="ov-day-num">${d}</div><div>${chips}${more}</div></div>`;
+  }
+
+  const total = startOffset + lastDate;
+  for (let i = 0, t = total % 7 ? 7 - (total % 7) : 0; i < t; i++) cells += '<div class="ov-day ov-day-blank"></div>';
+
+  container.innerHTML = `
+    <div class="ov-cal-header">
+      <button class="ov-cal-nav" onclick="navCalendar(-1)">&#8249;</button>
+      <div class="ov-cal-title">${monthLabel}</div>
+      <button class="ov-cal-nav" onclick="navCalendar(1)">&#8250;</button>
+      <button class="ov-cal-today" onclick="resetCalendar()">Today</button>
+    </div>
+    <div class="ov-cal-grid">${hdrs}${cells}</div>`;
+}
+
+function navCalendar(delta) {
+  currentCalendarMonth = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + delta, 1);
+  const c = document.getElementById('ov-cal-container');
+  if (c) buildOvCalendar(c);
+}
+
+function resetCalendar() {
+  currentCalendarMonth = new Date();
+  const c = document.getElementById('ov-cal-container');
+  if (c) buildOvCalendar(c);
+}
+
+function setOvPeriod(period, btn) {
+  overviewPeriod = period;
+  document.querySelectorAll('.ov-period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const tilesArea = document.getElementById('ov-tiles-area');
+  if (tilesArea) buildOvTiles(tilesArea, getPeriodBounds(period));
+}
+
+function buildHeatmap(container) {
+  if (!container) return;
+  const withPoly = activities.filter(a => a.map?.summary_polyline);
+  if (!withPoly.length) {
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:12px;">No GPS data available</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div class="ov-heatmap-meta">
+      <span>${withPoly.length} GPS-tracked runs overlaid</span>
+      <span>Brighter = more frequently run route</span>
+    </div>
+    <div class="ov-heatmap-box" id="ov-heatmap"></div>`;
+
+  setTimeout(() => {
+    if (heatmapLeaflet) { heatmapLeaflet.remove(); heatmapLeaflet = null; }
+    const routes = withPoly.map(a => decodePolyline(a.map.summary_polyline)).filter(r => r.length >= 2);
+    if (!routes.length) return;
+    const allPts = routes.flat();
+    const bounds = L.latLngBounds(allPts);
+    heatmapLeaflet = L.map('ov-heatmap', { zoomControl: true, attributionControl: false, preferCanvas: true });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(heatmapLeaflet);
+    routes.forEach(pts => {
+      L.polyline(pts, { color: '#FC4C02', weight: 8,  opacity: 0.04, lineJoin: 'round', lineCap: 'round' }).addTo(heatmapLeaflet);
+      L.polyline(pts, { color: '#FC4C02', weight: 2,  opacity: 0.16, lineJoin: 'round', lineCap: 'round' }).addTo(heatmapLeaflet);
+    });
+    heatmapLeaflet.fitBounds(bounds, { padding: [28, 28] });
+  }, 80);
+}
+
+function buildWeeklyVolumeChart(container) {
+  if (!container) return;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const dow = (now.getDay() + 6) % 7; // 0 = Monday
+
+  const weeks = [];
+  for (let w = 11; w >= 0; w--) {
+    const start = new Date(now); start.setDate(now.getDate() - dow - w * 7); start.setHours(0,0,0,0);
+    const end   = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+    const runs  = activities.filter(a => { const d = new Date(a.start_date_local); return d >= start && d <= end; });
+    const distKm = +(runs.reduce((s,a) => s + (a.distance||0), 0) / 1000).toFixed(1);
+    const elevM  = Math.round(runs.reduce((s,a) => s + (a.total_elevation_gain||0), 0));
+    weeks.push({ label: start.toLocaleDateString('en-GB',{day:'numeric',month:'short'}), distKm, runs: runs.length, elevM, isCurrent: w === 0 });
+  }
+
+  const vals   = weeks.map(w => w.distKm);
+  const avgKm  = +(vals.reduce((s,v) => s+v, 0) / vals.length).toFixed(1);
+  const rolling = vals.map((_,i) => { const sl = vals.slice(Math.max(0,i-3),i+1); return +(sl.reduce((s,v)=>s+v,0)/sl.length).toFixed(1); });
+
+  const last4   = vals.slice(-4).reduce((s,v)=>s+v,0) / 4;
+  const prev4   = vals.slice(-8,-4).reduce((s,v)=>s+v,0) / 4;
+  const trendPct = prev4 > 0 ? Math.round((last4 - prev4) / prev4 * 100) : 0;
+  const trendTxt = trendPct > 10 ? '↑ Building volume' : trendPct < -10 ? '↓ Tapering' : '→ Maintaining';
+  const trendClr = trendPct > 10 ? '#4ade80' : trendPct < -10 ? '#f87171' : 'var(--muted)';
+
+  const barColors = vals.map((_, i) => weeks[i].isCurrent ? 'rgba(252,76,2,0.95)' : `rgba(252,76,2,${(0.28 + (i/11)*0.52).toFixed(2)})`);
+
+  container.innerHTML = `
+    <div class="ov-vol-header">
+      <span style="font-size:11px;color:var(--faint);font-family:var(--mono);">Avg: <strong style="color:var(--muted);">${avgKm} km</strong> / week</span>
+      <span style="font-size:11px;font-family:var(--mono);color:${trendClr};font-weight:600;">${trendTxt}</span>
+    </div>
+    <div class="ov-chart-wrap"><canvas id="ov-vol-canvas"></canvas></div>
+    <div class="ov-vol-legend">
+      <div class="ov-vol-legend-item"><div style="width:10px;height:10px;border-radius:2px;background:rgba(252,76,2,0.85);flex-shrink:0;"></div>Weekly km</div>
+      <div class="ov-vol-legend-item"><div style="width:18px;height:0;border-top:2px dashed rgba(96,165,250,0.8);margin-right:2px;"></div>4-week rolling avg</div>
+      <div class="ov-vol-legend-item"><div style="width:18px;height:0;border-top:1.5px dashed rgba(136,133,128,0.35);margin-right:2px;"></div>12-week avg</div>
+    </div>`;
+
+  const canvas = document.getElementById('ov-vol-canvas');
+  if (!canvas) return;
+  if (ovVolChart) { ovVolChart.destroy(); ovVolChart = null; }
+
+  ovVolChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: weeks.map(w => w.label),
+      datasets: [
+        { label:'Weekly km',    data: vals,               backgroundColor: barColors, borderRadius: 4, borderSkipped: false, barPercentage: 0.72, order: 3 },
+        { label:'4-week avg',   data: rolling, type:'line', borderColor:'rgba(96,165,250,0.85)', borderWidth: 2, borderDash:[5,3], pointRadius: 0, tension: 0.4, fill: false, order: 1 },
+        { label:'12-week avg',  data: weeks.map(()=>avgKm), type:'line', borderColor:'rgba(136,133,128,0.28)', borderWidth: 1.5, borderDash:[2,5], pointRadius: 0, tension: 0, fill: false, order: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor:'#1e2021', borderColor:'rgba(255,255,255,0.12)', borderWidth:1,
+          titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'DM Mono',size:11},
+          callbacks: {
+            title: items => 'Week of ' + weeks[items[0].dataIndex].label,
+            label: item => {
+              if (item.datasetIndex === 0) {
+                const w = weeks[item.dataIndex];
+                return [` Distance: ${w.distKm} km`, ` Runs: ${w.runs}`, ` Elevation: ${w.elevM} m`];
+              }
+              if (item.datasetIndex === 1) return ` 4-week avg: ${item.raw} km`;
+              return null;
+            },
+            filter: item => item.datasetIndex < 2
+          }
+        }
+      },
+      scales: {
+        x: { ticks:{color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:10},maxRotation:0}, grid:{display:false} },
+        y: { beginAtZero:true, ticks:{color:'rgba(136,133,128,0.8)',font:{family:'DM Mono',size:10},callback:v=>v+'km'}, grid:{color:'rgba(255,255,255,0.05)'} }
+      }
+    }
+  });
+}
+
+function renderOverviewPage() {
+  const el = document.getElementById('overview-page');
+  if (!el) return;
+  if (!activities.length) {
+    el.innerHTML = '<div style="padding:60px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;">No activity data loaded yet.</div>';
+    return;
+  }
+  const now = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  if (ovVolChart) { ovVolChart.destroy(); ovVolChart = null; }
+  if (heatmapLeaflet) { heatmapLeaflet.remove(); heatmapLeaflet = null; }
+  el.innerHTML = `<div class="ov-inner">
+    <div class="ov-title">Overview</div>
+    <div class="ov-sub">${now}</div>
+    <div class="ov-period-tabs">
+      <button class="ov-period-btn ${overviewPeriod==='week'?'active':''}" onclick="setOvPeriod('week',this)">This week</button>
+      <button class="ov-period-btn ${overviewPeriod==='month'?'active':''}" onclick="setOvPeriod('month',this)">This month</button>
+    </div>
+    <div id="ov-tiles-area"></div>
+    <div class="ov-section-head">Weekly volume — last 12 weeks</div>
+    <div id="ov-vol-area"></div>
+    <div class="ov-section-head">Training calendar</div>
+    <div id="ov-cal-container"></div>
+    <div class="ov-section-head">Personal heatmap — all runs</div>
+    <div id="ov-heatmap-area"></div>
+  </div>`;
+  buildOvTiles(document.getElementById('ov-tiles-area'), getPeriodBounds(overviewPeriod));
+  buildWeeklyVolumeChart(document.getElementById('ov-vol-area'));
+  buildOvCalendar(document.getElementById('ov-cal-container'));
+  buildHeatmap(document.getElementById('ov-heatmap-area'));
 }
 
 function renderConnectionsPage() {
@@ -3239,24 +3861,29 @@ function renderTrainingPage() {
 }
 
 function goBackToFeed(pushHistory = true) {
-  if (pushHistory) history.pushState({}, '', '/');
   currentActivity = null; streamData = null; detailedActivity = null;
-  showPage('activities');
+  showPage('activities', pushHistory);
 }
 
+const VALID_PAGES = ['overview','dashboard','training','insights','prboard','connections'];
+
 function handleRoute() {
-  const m = window.location.pathname.match(/^\/activity\/(\d+)$/);
-  if (m && token) selectActivity(parseInt(m[1]), false);
+  const path = window.location.pathname;
+  const actMatch = path.match(/^\/activity\/(\d+)$/);
+  if (actMatch && token) { selectActivity(parseInt(actMatch[1]), false); return; }
+  const page = VALID_PAGES.find(p => path === `/${p}`) || 'activities';
+  showPage(page, false);
 }
 
 window.addEventListener('popstate', e => {
-  if (e.state?.activityId) selectActivity(e.state.activityId, false);
-  else goBackToFeed(false);
+  const s = e.state || {};
+  if (s.activityId) { selectActivity(s.activityId, false); return; }
+  showPage(s.page || 'activities', false);
 });
 
 // ─── SELECT ACTIVITY ───
 async function selectActivity(id, pushHistory = true) {
-  if (pushHistory) history.pushState({ activityId: id }, '', `/activity/${id}`);
+  if (pushHistory) history.pushState({ page: 'dashboard', activityId: id }, '', `/activity/${id}`);
   // Switch to dashboard layout
   setNavActive('dashboard');
   document.getElementById('connections-page').style.display = 'none';
@@ -3384,6 +4011,7 @@ function renderDetail(act, streams) {
           <button class="map-tab" onclick="setMapMode('hr',this)">Colour by HR</button>
           <button class="map-tab" onclick="setMapMode('pace',this)">Colour by Pace</button>
           <button class="map-tab" onclick="setMapMode('grade',this)">Colour by Grade</button>
+          <button id="sat-toggle-btn" class="map-tab" onclick="toggleSatellite()" style="margin-left:auto;">Satellite</button>
         </div>
         <div class="map-splits-layout">
           ${splits.length ? `
@@ -3730,6 +4358,21 @@ let mapPolylines = [];
 let mapMode = 'solid';
 let mapStreamData = null;
 let mapSplitHighlight = null;
+let currentTileLayer = null;
+let isSatellite = false;
+
+const TILE_OSM  = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_SAT  = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+
+function toggleSatellite() {
+  if (!leafletMap) return;
+  isSatellite = !isSatellite;
+  if (currentTileLayer) leafletMap.removeLayer(currentTileLayer);
+  currentTileLayer = L.tileLayer(isSatellite ? TILE_SAT : TILE_OSM, { maxZoom: 19 }).addTo(leafletMap);
+  currentTileLayer.bringToBack();
+  const btn = document.getElementById('sat-toggle-btn');
+  if (btn) { btn.textContent = isSatellite ? 'Street' : 'Satellite'; btn.classList.toggle('active', isSatellite); }
+}
 
 function highlightKmOnMap(km) {
   if (pinnedSplitKm !== null && pinnedSplitKm !== km) return;
@@ -3874,11 +4517,13 @@ function initMap(streams) {
   mapStreamData = streams;
 
   if (leafletMap) { leafletMap.remove(); leafletMap = null; mapMarker = null; mapPolylines = []; }
+  isSatellite = false;
+  currentTileLayer = null;
 
   setTimeout(() => {
     const center = latlng[Math.floor(latlng.length / 2)];
     leafletMap = L.map('run-map', { zoomControl: true, attributionControl: false }).setView(center, 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(leafletMap);
+    currentTileLayer = L.tileLayer(TILE_OSM, { maxZoom: 19 }).addTo(leafletMap);
     drawRoute(streams);
 
     const icon = L.divIcon({
