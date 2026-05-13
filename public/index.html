@@ -41,6 +41,9 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html {
+    overflow-x: hidden;    /* clamp at root level — does not break child touch-scroll on iOS */
+  }
   html, body {
     background: var(--bg);
     color: var(--text);
@@ -52,19 +55,19 @@
   /* ─── LAYOUT ─── */
   .shell {
     display: grid;
-    grid-template-columns: 1fr;        /* home-feed: full width */
+    grid-template-columns: minmax(0, 1fr);   /* minmax(0,1fr) prevents column expanding to children's min-content width */
     grid-template-rows: 56px 1fr;
     height: 100vh;
     overflow: hidden;
   }
   .shell.sidebar-open {
-    grid-template-columns: 360px 1fr; /* activity view: sidebar + panel */
+    grid-template-columns: 360px minmax(0, 1fr);
   }
 
   /* ─── HOME FEED ─── */
   #home-feed {
     position: relative;
-    overflow-y: auto; height: 100%; background: var(--bg);
+    overflow-y: auto; overflow-x: hidden; height: 100%; background: var(--bg);
     display: flex; flex-direction: column;
   }
   #home-feed::before,
@@ -176,6 +179,7 @@
     align-items: center;
     gap: 2px;
     flex: 1;
+    min-width: 0;          /* prevents flex child from expanding beyond available space */
     justify-content: center;
   }
   .nav-tab {
@@ -343,7 +347,7 @@
   }
 
   /* ─── OVERVIEW PAGE ─── */
-  #overview-page { height: 100%; overflow-y: auto; }
+  #overview-page { height: 100%; overflow-y: auto; overflow-x: hidden; }
   .ov-inner { max-width: 1020px; margin: 0 auto; padding: 40px; box-sizing: border-box; }
   .ov-title { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
   .ov-sub { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 24px; }
@@ -392,7 +396,7 @@
   }
 
   /* ─── INSIGHTS PAGE ─── */
-  #insights-page { height: 100%; overflow-y: auto; }
+  #insights-page { height: 100%; overflow-y: auto; overflow-x: hidden; }
   .ins-inner { max-width: 960px; margin: 0 auto; padding: 40px; box-sizing: border-box; }
   .ins-title { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
   .ins-sub { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 32px; }
@@ -480,6 +484,7 @@
     max-width: 860px;
     margin: 0 auto;
     overflow-y: auto;
+    overflow-x: hidden;
     height: 100%;
     box-sizing: border-box;
   }
@@ -1175,6 +1180,7 @@
 
     /* ── Nav: horizontally scrollable — fits all 7 tabs without wrapping ── */
     .topbar-nav {
+      min-width: 0;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -1390,7 +1396,7 @@
     <div id="insights-page" style="display:none;"></div>
 
     <!-- TRAINING LOAD PAGE -->
-    <div id="training-page" style="display:none;height:100%;overflow-y:auto;"></div>
+    <div id="training-page" style="display:none;height:100%;overflow-y:auto;overflow-x:hidden;"></div>
 
     <!-- PR BOARD PAGE -->
     <div id="pr-board-page" style="display:none;height:100%;overflow-y:auto;"></div>
