@@ -2027,8 +2027,19 @@ function escapeHtml(str) {
 }
 
 // ─── AUTH ───
-function getToken() { try { return localStorage.getItem('tl_strava_token'); } catch(e) { return sessionStorage.getItem('tl_strava_token'); } }
-function saveToken(t) { try { localStorage.setItem('tl_strava_token', t); } catch(e) { sessionStorage.setItem('tl_strava_token', t); } token = t; }
+function getToken() {
+  try {
+    const raw = localStorage.getItem('tl_strava_token') || sessionStorage.getItem('tl_strava_token');
+    if (!raw) return null;
+    try { const p = JSON.parse(raw); return typeof p === 'object' && p !== null ? p : { access_token: raw, refresh_token: null, expires_at: 0 }; }
+    catch { return { access_token: raw, refresh_token: null, expires_at: 0 }; }
+  } catch(e) { return null; }
+}
+function saveToken(data) {
+  const json = JSON.stringify(data);
+  try { localStorage.setItem('tl_strava_token', json); } catch(e) { sessionStorage.setItem('tl_strava_token', json); }
+  token = data.access_token;
+}
 function clearToken() { try { localStorage.removeItem('tl_strava_token'); } catch(e) { sessionStorage.removeItem('tl_strava_token'); } token = null; }
 
 // ─── WHOOP STORAGE ───
@@ -2046,12 +2057,29 @@ async function exchangeCode(code) {
     body: JSON.stringify({client_id: CLIENT_ID, client_secret: CLIENT_SECRET, code, grant_type: 'authorization_code'})
   });
   const d = await r.json();
-  if (d.access_token) return { token: d.access_token, athlete: d.athlete };
+  if (d.access_token) return { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at, athlete: d.athlete };
   throw new Error(d.message || 'Authentication failed');
+}
+
+async function refreshStravaToken(refreshToken) {
+  const r = await fetch('https://www.strava.com/oauth/token', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({client_id: CLIENT_ID, client_secret: CLIENT_SECRET, refresh_token: refreshToken, grant_type: 'refresh_token'})
+  });
+  const d = await r.json();
+  if (d.access_token) return { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at };
+  throw new Error(d.message || 'Token refresh failed — please reconnect Strava');
 }
 
 // ─── API ───
 async function apiFetch(path) {
+  const tokenData = getToken();
+  if (tokenData?.refresh_token && tokenData.expires_at && Date.now() / 1000 > tokenData.expires_at - 60) {
+    try {
+      const refreshed = await refreshStravaToken(tokenData.refresh_token);
+      saveToken(refreshed);
+    } catch(e) { clearToken(); location.reload(); return; }
+  }
   const r = await fetch('https://www.strava.com/api/v3' + path, { headers: { Authorization: `Bearer ${token}` } });
   if (r.status === 401) { clearToken(); location.reload(); }
   return r.json();
@@ -2131,7 +2159,7 @@ async function init() {
       document.getElementById('auth-error').innerHTML = '<div class="error-banner" style="margin-top:20px;">Connect Strava first, then connect Whoop.</div>';
       return;
     }
-    token = stored;
+    token = stored.access_token;
 
     // Whoop may return ?error= instead of ?code= (e.g. user denied, bad config)
     if (!code) {
@@ -2156,16 +2184,16 @@ async function init() {
   if (code) {
     window.history.replaceState({}, '', window.location.pathname);
     try {
-      const { token: t, athlete } = await exchangeCode(code);
-      saveToken(t);
-      await showApp(athlete);
+      const data = await exchangeCode(code);
+      saveToken(data);
+      await showApp(data.athlete);
     } catch(e) {
       document.getElementById('auth-error').innerHTML = `<div class="error-banner" style="margin-top:20px;">${e.message}</div>`;
     }
     return;
   }
 
-  if (stored) { token = stored; await showApp(null); return; }
+  if (stored) { token = stored.access_token; await showApp(null); return; }
 }
 
 async function showApp(athlete) {
