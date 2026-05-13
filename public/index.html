@@ -478,6 +478,157 @@
     .ae-stats-grid { grid-template-columns: repeat(3, 1fr); }
   }
 
+  /* ─── WEATHER BADGE ─── */
+  .weather-badge {
+    display: none; align-items: center; gap: 7px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px 4px 9px;
+    font-size: 11px; font-family: var(--mono); color: var(--muted);
+    margin-top: 9px; width: fit-content;
+  }
+  .weather-badge.loaded { display: inline-flex; }
+
+  /* ─── GEAR SECTION ─── */
+  .gear-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 14px; }
+  .gear-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .gear-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; }
+  .gear-card-name { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+  .gear-card-sub { font-size: 11px; color: var(--faint); font-family: var(--mono); margin-bottom: 14px; }
+  .gear-bar-wrap { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .gear-bar { height: 100%; border-radius: 3px; transition: width 0.7s ease; }
+  .gear-card-foot { display: flex; justify-content: space-between; font-size: 10px; font-family: var(--mono); color: var(--faint); }
+  .gear-badge { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+
+  /* ─── RACE COUNTDOWN ─── */
+  .race-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px 24px; margin-bottom: 24px;
+  }
+  .race-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .race-card-name { font-size: 13px; font-weight: 700; letter-spacing: -0.01em; display: flex; align-items: center; gap: 7px; }
+  .race-card-actions { display: flex; gap: 6px; }
+  .race-act-btn { background: none; border: 1px solid var(--border2); color: var(--faint); border-radius: 5px; padding: 3px 9px; font-size: 10px; font-family: var(--mono); cursor: pointer; transition: all 0.15s; }
+  .race-act-btn:hover { border-color: var(--orange-glow); color: var(--orange); }
+  .race-stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 16px 0; }
+  .race-stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+  .race-stat-val { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 3px; }
+  .race-stat-lbl { font-size: 10px; color: var(--faint); font-family: var(--mono); }
+  .race-stat-tag { font-size: 9px; font-family: var(--mono); font-weight: 600; margin-top: 3px; }
+  .race-tip { font-size: 12px; color: var(--muted); font-family: var(--mono); padding: 10px 14px; background: rgba(252,76,2,0.06); border: 1px solid rgba(252,76,2,0.15); border-radius: 8px; line-height: 1.6; }
+  .race-goal-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .race-goal-input {
+    background: var(--bg); border: 1px solid var(--border2); border-radius: 8px;
+    padding: 8px 12px; color: var(--text); font-family: var(--sans); font-size: 13px;
+    outline: none; flex: 1; min-width: 130px; box-sizing: border-box;
+  }
+  .race-goal-input:focus { border-color: var(--orange-glow); }
+  .race-goal-input::placeholder { color: var(--faint); }
+  .race-goal-save { background: var(--orange); color: white; border: none; border-radius: 8px; padding: 8px 18px; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
+  .race-goal-save:hover { opacity: 0.85; }
+  @media (max-width: 767px) {
+    .race-stats-row { gap: 8px; }
+    .race-stat-val { font-size: 22px; }
+    .race-goal-form { flex-direction: column; }
+    .race-goal-input { width: 100%; }
+    .gear-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── TRANSITIONS & SKELETON LOADING ─── */
+  @keyframes shimmer {
+    0%   { background-position: -700px 0; }
+    100% { background-position:  700px 0; }
+  }
+  .skeleton {
+    background: linear-gradient(90deg,
+      var(--surface) 0%,
+      rgba(255,255,255,0.055) 45%,
+      rgba(255,255,255,0.055) 55%,
+      var(--surface) 100%);
+    background-size: 1400px 100%;
+    animation: shimmer 1.7s ease-in-out infinite;
+    border-radius: 6px;
+    display: block;
+  }
+  /* Page reveal — fades in + slides up 10px on entry */
+  @keyframes pageReveal {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  .page-reveal { animation: pageReveal 0.22s cubic-bezier(0.4,0,0.2,1) both; }
+
+  /* Skeleton tile structure */
+  .skel-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .skel-tile-map { height: 200px; border-radius: 0; }
+  .skel-tile-body { padding: 14px; }
+  .skel-row { display: flex; gap: 10px; }
+
+  /* Skeleton metric card */
+  .skel-metric { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+
+  /* Mobile skeleton adjustments */
+  @media (max-width: 767px) {
+    .skel-tile-map { height: 180px; }
+  }
+
+  /* ─── MOBILE ACTIVITY DRAWER ─── */
+  #drawer-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 200;
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  }
+  #drawer-overlay.open { display: block; }
+  #mobile-drawer {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 88vw; max-width: 340px;
+    background: var(--bg); border-right: 1px solid var(--border);
+    z-index: 201; display: flex; flex-direction: column; overflow: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  }
+  #mobile-drawer.open { transform: translateX(0); }
+  .drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+  }
+  .drawer-close {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    padding: 4px; border-radius: 6px; display: flex; align-items: center;
+    transition: color 0.15s;
+  }
+  .drawer-close:hover { color: var(--text); }
+  .drawer-search-wrap { padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .drawer-search {
+    width: 100%; background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 9px 12px; color: var(--text);
+    font-family: var(--mono); font-size: 13px; outline: none; box-sizing: border-box;
+  }
+  .drawer-search:focus { border-color: var(--orange-glow); }
+  .drawer-count { font-size: 10px; color: var(--faint); font-family: var(--mono); padding: 6px 16px 2px; flex-shrink: 0; }
+  .drawer-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .drawer-item {
+    padding: 11px 14px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.1s;
+  }
+  .drawer-item:active { background: var(--surface2); }
+  .drawer-item-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .drawer-item-meta { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+  .drawer-item.active-run { background: var(--surface2); border-left: 2px solid var(--orange); padding-left: 12px; }
+  /* Runs pill — only ever visible on mobile, only on Dashboard */
+  #mobile-menu-btn {
+    display: none; background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; padding: 5px 10px 5px 8px;
+    border-radius: 7px; align-items: center; gap: 5px; flex-shrink: 0;
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  #mobile-menu-btn:hover { border-color: var(--orange-glow); color: var(--orange); }
+  #mobile-menu-btn.show { display: flex; }
+  @media (min-width: 768px) { #mobile-menu-btn { display: none !important; } }
+
   /* ─── CONNECTIONS PAGE ─── */
   .connections-page {
     padding: 48px 40px;
@@ -1041,9 +1192,9 @@
      ════════════════════════════════════════════════ */
   @media (max-width: 767px) {
 
-    /* ── Shell: always single column ── */
+    /* ── Shell: always single column — minmax(0,1fr) stops column expanding to min-content width ── */
     .shell, .shell.sidebar-open {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
     /* Sidebar never sits beside the detail on mobile —
        the user navigates via the feed / history API    */
@@ -1250,6 +1401,12 @@
 
   <!-- TOPBAR -->
   <div class="topbar">
+    <button id="mobile-menu-btn" onclick="openMobileDrawer()" aria-label="Browse runs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+      Runs
+    </button>
     <div class="logo">
       <div class="logo-mark">
         <img src="/synorra-logo.png" alt="Synorra logo">
@@ -2031,7 +2188,8 @@ async function showApp(athlete) {
     `);
   }
 
-  document.getElementById('activity-tiles').innerHTML = `<div style="padding:60px;text-align:center;"><div class="spinner" style="margin:0 auto;"></div></div>`;
+  document.getElementById('activity-tiles').innerHTML = buildSkeletonFeed(5);
+  document.getElementById('activity-list').innerHTML  = buildSkeletonSidebar(9);
 
   try {
     const data = await fetchActivities();
@@ -2048,10 +2206,12 @@ async function showApp(athlete) {
     // does NOT wipe the token or trigger a reload.
     Promise.all([
       apiFetchSafe('/athlete/zones'),
-      apiFetchSafe('/athlete/stats')
-    ]).then(([zonesRes, statsRes]) => {
+      apiFetchSafe('/athlete/stats'),
+      apiFetchSafe('/athlete')
+    ]).then(([zonesRes, statsRes, athleteRes]) => {
       if (zonesRes?.heart_rate?.zones?.length >= 5) stravaZones = zonesRes.heart_rate.zones;
       if (statsRes) { athleteStats = statsRes; renderAthleteStats(); }
+      if (athleteRes?.shoes) athleteShoes = athleteRes.shoes;
     });
     const count = document.getElementById('sidebar-count');
     if (count) count.textContent = `${activities.length} runs loaded`;
@@ -2316,35 +2476,46 @@ function showPage(page, pushHistory = true) {
   sidebar.style.display       = 'none';
   shell.classList.remove('sidebar-open');
   document.getElementById('copy-btn').style.display = 'none';
+  setMobileMenuBtn(false);
+  closeMobileDrawer();
 
   if (page === 'activities') {
     feed.style.display = 'flex';
+    revealPage(feed);
     setTimeout(() => Object.values(tileMapInstances).forEach(m => m.invalidateSize()), 80);
   } else if (page === 'dashboard') {
     shell.classList.add('sidebar-open');
     sidebar.style.display = 'block';
     applyFilters();
+    setMobileMenuBtn(true);
     if (currentActivity) {
       detail.style.display = 'block';
+      revealPage(detail);
       document.getElementById('copy-btn').style.display = 'inline-flex';
     } else {
       emptyState.style.display = 'flex';
+      revealPage(emptyState);
     }
   } else if (page === 'overview') {
     overviewPage.style.display = 'block';
     renderOverviewPage();
+    revealPage(overviewPage);
   } else if (page === 'insights') {
     insightsPage.style.display = 'block';
     renderInsightsPage();
+    revealPage(insightsPage);
   } else if (page === 'prboard') {
     prPage.style.display = 'block';
     renderPRBoard();
+    revealPage(prPage);
   } else if (page === 'training') {
     trainPage.style.display = 'block';
     renderTrainingPage();
+    revealPage(trainPage);
   } else if (page === 'connections') {
     connPage.style.display = 'block';
     renderConnectionsPage();
+    revealPage(connPage);
   }
 }
 
@@ -2385,22 +2556,21 @@ async function fetchWhoopRecoveryHistory() {
 
   const all = [];
   let nextToken = null;
-  const BASE = 'https://api.prod.whoop.com/developer/v1/recovery';
 
   for (let page = 0; page < 12; page++) {
-    const url = nextToken ? `${BASE}?limit=25&nextToken=${encodeURIComponent(nextToken)}` : `${BASE}?limit=25`;
-    let resp;
     try {
-      resp = await fetch(url, { headers: { 'Authorization': `Bearer ${tok.access_token}` } });
-    } catch {
-      break; // CORS or network error
-    }
-    if (!resp.ok) break;
-    const data = await resp.json();
-    const recs = (data.records || []).filter(r => r.score?.recovery_score > 0 && r.score_state !== 'UNSCORABLE');
-    all.push(...recs);
-    nextToken = data.next_token;
-    if (!nextToken || recs.length < 25) break;
+      const resp = await fetch('/.netlify/functions/whoop-recovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tok.access_token, nextToken })
+      });
+      if (!resp.ok) break;
+      const data = await resp.json();
+      const recs = (data.records || []).filter(r => r.score?.recovery_score > 0 && r.score_state !== 'UNSCORABLE');
+      all.push(...recs);
+      nextToken = data.next_token;
+      if (!nextToken || recs.length < 25) break;
+    } catch { break; }
   }
 
   if (all.length) {
@@ -3172,11 +3342,355 @@ function renderOverviewPage() {
     <div id="ov-cal-container"></div>
     <div class="ov-section-head">Personal heatmap — all runs</div>
     <div id="ov-heatmap-area"></div>
+    <div class="ov-section-head">Shoes &amp; gear</div>
+    <div id="ov-gear-area"></div>
   </div>`;
   buildOvTiles(document.getElementById('ov-tiles-area'), getPeriodBounds(overviewPeriod));
   buildWeeklyVolumeChart(document.getElementById('ov-vol-area'));
   buildOvCalendar(document.getElementById('ov-cal-container'));
   buildHeatmap(document.getElementById('ov-heatmap-area'));
+
+  const gearArea = document.getElementById('ov-gear-area');
+  if (athleteShoes.length) {
+    buildGearSection(gearArea);
+  } else {
+    gearArea.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--faint);font-size:12px;font-family:var(--mono);"><div class="spinner" style="width:14px;height:14px;border-width:2px;flex-shrink:0;"></div>Loading gear data…</div>`;
+    apiFetchSafe('/athlete').then(res => {
+      if (res?.shoes) { athleteShoes = res.shoes; buildGearSection(document.getElementById('ov-gear-area')); }
+      else if (document.getElementById('ov-gear-area')) document.getElementById('ov-gear-area').innerHTML = '<div style="font-size:12px;color:var(--faint);font-family:var(--mono);">No gear found in your Strava profile.</div>';
+    });
+  }
+}
+
+// ─── WEATHER ───
+let weatherCache = {};
+
+async function fetchAndShowWeather(activity) {
+  const latlng = activity.start_latlng;
+  if (!latlng?.length) return;
+  const [lat, lng] = latlng;
+  const date = activity.start_date_local.slice(0, 10);
+  const hour = Math.min(parseInt(activity.start_date_local.slice(11, 13)) || 8, 23);
+  const key  = `w_${activity.id}`;
+  let w = weatherCache[key];
+  if (!w) {
+    try {
+      const url = `https://api.open-meteo.com/v1/history?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&start_date=${date}&end_date=${date}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code&timezone=auto`;
+      const resp = await fetch(url);
+      if (!resp.ok) return;
+      const d = await resp.json();
+      const h = d.hourly;
+      const i = Math.min(hour, (h?.time?.length || 1) - 1);
+      w = { temp: Math.round(h.temperature_2m[i]), wind: Math.round(h.wind_speed_10m[i]), dir: h.wind_direction_10m[i], code: h.weather_code[i] };
+      weatherCache[key] = w;
+    } catch { return; }
+  }
+  const el = document.getElementById('weather-badge');
+  if (!el) return;
+  const { icon } = weatherCodeInfo(w.code);
+  const dir = windCardinal(w.dir);
+  el.innerHTML = `<span style="font-size:14px;">${icon}</span><span>${w.temp}°C</span><span style="color:var(--faint);">·</span><span>${w.wind} km/h ${dir}</span>`;
+  el.classList.add('loaded');
+}
+
+function weatherCodeInfo(code) {
+  if (code == null) return { icon: '🌡️' };
+  if (code === 0)  return { icon: '☀️' };
+  if (code <= 2)   return { icon: '🌤️' };
+  if (code <= 3)   return { icon: '☁️' };
+  if (code <= 48)  return { icon: '🌫️' };
+  if (code <= 55)  return { icon: '🌦️' };
+  if (code <= 67)  return { icon: '🌧️' };
+  if (code <= 77)  return { icon: '🌨️' };
+  if (code <= 82)  return { icon: '🌦️' };
+  return { icon: '⛈️' };
+}
+
+function windCardinal(deg) {
+  if (deg == null) return '';
+  return ['N','NE','E','SE','S','SW','W','NW'][Math.round(deg / 45) % 8];
+}
+
+// ─── GEAR / SHOES ───
+let athleteShoes = [];
+
+function buildGearSection(container) {
+  if (!container) return;
+  if (!athleteShoes.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--faint);font-family:var(--mono);padding:4px 0;">No shoes found in your Strava profile — add gear to your Strava account to track it here.</div>';
+    return;
+  }
+  const distByGear = {}, lastByGear = {};
+  activities.forEach(a => {
+    if (!a.gear_id) return;
+    distByGear[a.gear_id] = (distByGear[a.gear_id] || 0) + (a.distance || 0);
+    if (!lastByGear[a.gear_id] || a.start_date_local > lastByGear[a.gear_id]) lastByGear[a.gear_id] = a.start_date_local;
+  });
+  const threshold = 700;
+  const cards = athleteShoes.map(shoe => {
+    const stravaKm = Math.round((shoe.distance || 0) / 1000);
+    const ourKm    = Math.round((distByGear[shoe.id] || 0) / 1000);
+    const displayKm = stravaKm || ourKm;
+    const pct = Math.min(100, (displayKm / threshold) * 100);
+    const last = lastByGear[shoe.id]
+      ? new Date(lastByGear[shoe.id].slice(0, 10)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '—';
+    let bar, badge;
+    if (pct >= 90) {
+      bar = '#f87171';
+      badge = `<span class="gear-badge" style="background:rgba(248,113,113,0.12);color:#f87171;border:1px solid rgba(248,113,113,0.28);">⚠ Replace soon</span>`;
+    } else if (pct >= 70) {
+      bar = '#fbbf24';
+      badge = `<span class="gear-badge" style="background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.28);">Getting worn</span>`;
+    } else {
+      bar = '#4ade80';
+      badge = shoe.primary ? `<span class="gear-badge" style="background:var(--orange-dim);color:var(--orange);border:1px solid var(--orange-glow);">Active</span>` : '';
+    }
+    return `<div class="gear-card">
+      <div class="gear-card-top"><div class="gear-card-name">${shoe.name || 'Unknown'}</div>${badge}</div>
+      <div class="gear-card-sub">${displayKm} km · ${threshold} km threshold · ${pct.toFixed(0)}% worn</div>
+      <div class="gear-bar-wrap"><div class="gear-bar" style="width:${pct.toFixed(1)}%;background:${bar};"></div></div>
+      <div class="gear-card-foot"><span>${displayKm} / ${threshold} km</span><span>Last used ${last}</span></div>
+    </div>`;
+  });
+  container.innerHTML = `<div class="gear-grid">${cards.join('')}</div>`;
+}
+
+// ─── RACE / GOAL COUNTDOWN ───
+const RACE_GOAL_KEY = 'synorra_race_goal';
+let raceGoal = null;
+
+function loadRaceGoal() {
+  try { raceGoal = JSON.parse(localStorage.getItem(RACE_GOAL_KEY) || 'null'); } catch { raceGoal = null; }
+}
+function saveRaceGoal() {
+  const name = document.getElementById('rg-name')?.value?.trim();
+  const date = document.getElementById('rg-date')?.value;
+  if (!name || !date) return;
+  raceGoal = { name, date };
+  try { localStorage.setItem(RACE_GOAL_KEY, JSON.stringify(raceGoal)); } catch {}
+  renderTrainingPage();
+}
+function clearRaceGoal() {
+  raceGoal = null;
+  try { localStorage.removeItem(RACE_GOAL_KEY); } catch {}
+  renderTrainingPage();
+}
+function editRaceGoal() {
+  raceGoal = null;
+  buildRaceCard(document.getElementById('race-goal-card'));
+}
+
+function projectTSB(ctl, atl, days) {
+  return +(ctl * Math.exp(-days / 42) - atl * Math.exp(-days / 7)).toFixed(1);
+}
+function tsbStatusLabel(v) {
+  if (v > 15)  return { color: '#4ade80', label: 'Fresh' };
+  if (v > 5)   return { color: '#4ade80', label: 'Race ready' };
+  if (v > -5)  return { color: '#fbbf24', label: 'Neutral' };
+  if (v > -20) return { color: '#fb923c', label: 'Building' };
+  return           { color: '#f87171',  label: 'Fatigued' };
+}
+
+function buildRaceCard(container) {
+  if (!container) return;
+  loadRaceGoal();
+
+  if (!raceGoal) {
+    container.innerHTML = `<div class="race-card">
+      <div class="race-card-head">
+        <div class="race-card-name">🏁 Next race goal</div>
+      </div>
+      <div style="font-size:12px;color:var(--faint);font-family:var(--mono);margin-bottom:2px;">Set your race to track countdown, taper timing, and projected form.</div>
+      <div class="race-goal-form">
+        <input class="race-goal-input" id="rg-name" type="text" placeholder="Race name" maxlength="60">
+        <input class="race-goal-input" id="rg-date" type="date" style="max-width:160px;flex:0 0 auto;" min="${new Date().toISOString().slice(0,10)}">
+        <button class="race-goal-save" onclick="saveRaceGoal()">Set goal →</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const raceDate = new Date(raceGoal.date + 'T00:00:00');
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const days     = Math.round((raceDate - today) / 86400000);
+
+  if (days < 0) {
+    container.innerHTML = `<div class="race-card">
+      <div class="race-card-head">
+        <div class="race-card-name">🏁 ${raceGoal.name}</div>
+        <button class="race-act-btn" onclick="clearRaceGoal()">Set new goal</button>
+      </div>
+      <div style="font-size:13px;color:var(--muted);font-family:var(--mono);">Race has passed — how did it go? 🎉</div>
+    </div>`;
+    return;
+  }
+
+  if (!trainingLoadSeries) trainingLoadSeries = computeTrainingLoadSeries();
+  const last  = trainingLoadSeries?.[trainingLoadSeries.length - 1];
+  const ctl   = last?.ctl || 0;
+  const atl   = last?.atl || 0;
+  const tsb   = +(last?.tsb || 0).toFixed(1);
+  const proj  = projectTSB(ctl, atl, days);
+  const nowSt = tsbStatusLabel(tsb);
+  const prSt  = tsbStatusLabel(proj);
+
+  // Taper recommendation: when should they start tapering for target form +10?
+  let taperInDays = days - 14; // default 2-week taper
+  for (let d = 1; d <= days; d++) {
+    if (projectTSB(ctl, atl, d) >= 10) { taperInDays = days - d; break; }
+  }
+  const taperDate = new Date(today); taperDate.setDate(today.getDate() + Math.max(0, taperInDays));
+  const taperFmt  = taperDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const raceFmt   = raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  let tip;
+  if (taperInDays <= 0) {
+    tip = `You should be tapering now — ${days} day${days!==1?'s':''} to go. Ease off the load to peak on race day.`;
+  } else if (taperInDays <= 7) {
+    tip = `Taper window opens in ${taperInDays} day${taperInDays!==1?'s':''} (${taperFmt}). Start reducing load then to peak at race form.`;
+  } else {
+    tip = `Keep building. Start tapering in ${taperInDays} days (${taperFmt}) to arrive on race day in optimal form.`;
+  }
+
+  container.innerHTML = `<div class="race-card">
+    <div class="race-card-head">
+      <div class="race-card-name">🏁 ${raceGoal.name}</div>
+      <div class="race-card-actions">
+        <button class="race-act-btn" onclick="editRaceGoal()">Edit</button>
+        <button class="race-act-btn" onclick="clearRaceGoal()">×</button>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--faint);font-family:var(--mono);">${raceFmt}</div>
+    <div class="race-stats-row">
+      <div class="race-stat-card">
+        <div class="race-stat-val" style="color:var(--orange);">${days}</div>
+        <div class="race-stat-lbl">days to go</div>
+      </div>
+      <div class="race-stat-card">
+        <div class="race-stat-val" style="color:${nowSt.color};">${tsb > 0 ? '+' : ''}${tsb}</div>
+        <div class="race-stat-lbl">today's form</div>
+        <div class="race-stat-tag" style="color:${nowSt.color};">${nowSt.label}</div>
+      </div>
+      <div class="race-stat-card">
+        <div class="race-stat-val" style="color:${prSt.color};">${proj > 0 ? '+' : ''}${proj}</div>
+        <div class="race-stat-lbl">race day form*</div>
+        <div class="race-stat-tag" style="color:${prSt.color};">${prSt.label}</div>
+      </div>
+    </div>
+    <div class="race-tip">💡 ${tip}</div>
+    <div style="font-size:10px;color:var(--faint);font-family:var(--mono);margin-top:8px;">* projected assuming taper starts now · target form +10</div>
+  </div>`;
+}
+
+// ─── SKELETON LOADERS ───
+function skelBlock(w, h, extra) {
+  return `<div class="skeleton" style="width:${w};height:${h}px;border-radius:5px;${extra||''}"></div>`;
+}
+
+function buildSkeletonFeed(n) {
+  n = n || 5;
+  return Array.from({length: n}, () => `
+    <div class="skel-tile">
+      <div class="skel-tile-map skeleton"></div>
+      <div class="skel-tile-body">
+        <div class="skel-row" style="margin-bottom:8px;align-items:center;">
+          ${skelBlock('58%', 15)} ${skelBlock('54px', 14, 'border-radius:10px;margin-left:auto;')}
+        </div>
+        ${skelBlock('36%', 11, 'margin-bottom:14px;')}
+        <div class="skel-row">
+          ${Array.from({length:4}, () => skelBlock('1fr', 30, 'flex:1;')).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function buildSkeletonSidebar(n) {
+  n = n || 9;
+  return Array.from({length: n}, () => `
+    <div style="display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);">
+      <div class="skeleton" style="width:46px;height:46px;flex-shrink:0;border-radius:8px;"></div>
+      <div style="flex:1;min-width:0;">
+        ${skelBlock('75%', 13, 'margin-bottom:6px;')}
+        ${skelBlock('48%', 11, 'margin-bottom:8px;')}
+        <div class="skel-row" style="gap:6px;">${skelBlock('44px',13)} ${skelBlock('38px',13)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function buildSkeletonDetail() {
+  const metricsSkel = Array.from({length: 6}, () =>
+    `<div class="skel-metric">${skelBlock('60%',18,'margin-bottom:6px;')}${skelBlock('45%',10)}</div>`
+  ).join('');
+  return `<div class="detail">
+    <div class="detail-header" style="margin-bottom:20px;">
+      ${skelBlock('65%',22,'margin-bottom:9px;border-radius:6px;')}
+      ${skelBlock('42%',12,'border-radius:4px;')}
+    </div>
+    <div class="metrics-grid" style="margin-bottom:22px;">${metricsSkel}</div>
+    <div class="skeleton" style="height:230px;border-radius:12px;margin-bottom:22px;"></div>
+    <div class="skeleton" style="height:520px;border-radius:12px;"></div>
+  </div>`;
+}
+
+// ─── PAGE REVEAL ───
+function revealPage(el) {
+  if (!el) return;
+  el.classList.remove('page-reveal');
+  void el.offsetWidth; // force reflow so animation restarts
+  el.classList.add('page-reveal');
+}
+
+// ─── MOBILE ACTIVITY DRAWER ───
+function openMobileDrawer() {
+  buildDrawerList('');
+  document.getElementById('mobile-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('drawer-search')?.focus(), 300);
+}
+
+function closeMobileDrawer() {
+  document.getElementById('mobile-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+function filterDrawerList(query) {
+  buildDrawerList(query.toLowerCase());
+}
+
+function buildDrawerList(query) {
+  const listEl  = document.getElementById('drawer-list');
+  const countEl = document.getElementById('drawer-count');
+  if (!listEl) return;
+
+  const filtered = activities.filter(a =>
+    !query || (a.name || '').toLowerCase().includes(query)
+  );
+  if (countEl) countEl.textContent = `${filtered.length} run${filtered.length !== 1 ? 's' : ''}`;
+
+  if (!filtered.length) {
+    listEl.innerHTML = '<div style="padding:24px;color:var(--faint);font-size:13px;font-family:var(--mono);text-align:center;">No runs found</div>';
+    return;
+  }
+
+  const currentId = currentActivity?.id;
+  listEl.innerHTML = filtered.map(a => {
+    const rt  = getRunType(a.id);
+    const km  = ((a.distance || 0) / 1000).toFixed(1);
+    const date = fmtDate(a.start_date_local);
+    const active = a.id === currentId ? ' active-run' : '';
+    return `<div class="drawer-item${active}" onclick="selectActivity(${a.id}); closeMobileDrawer();">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
+        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap;flex-shrink:0;background:${rt.bg};color:${rt.color};border:1px solid ${rt.border};">${rt.label}</span>
+        <span class="drawer-item-name">${a.name || 'Run'}</span>
+      </div>
+      <div class="drawer-item-meta">${date} · ${km} km</div>
+    </div>`;
+  }).join('');
+}
+
+function setMobileMenuBtn(show) {
+  document.getElementById('mobile-menu-btn')?.classList.toggle('show', show);
 }
 
 function renderConnectionsPage() {
@@ -3816,10 +4330,13 @@ function renderTrainingPage() {
 
   const activeDays = trainingLoadSeries.filter(d => d.load > 0).length;
 
+  loadRaceGoal();
   el.innerHTML = `
     <div class="training-inner">
       <div class="tl-heading">Training Load</div>
       <div class="tl-sub">Fitness, fatigue &amp; form from ${activeDays} training days</div>
+
+      <div id="race-goal-card"></div>
 
       <div class="tl-toolbar">
         <div class="tl-period-tabs" style="margin-bottom:0;">
@@ -3864,6 +4381,7 @@ function renderTrainingPage() {
 
   buildTrainingChart();
   buildTrainingStats();
+  buildRaceCard(document.getElementById('race-goal-card'));
 }
 
 function goBackToFeed(pushHistory = true) {
@@ -3892,6 +4410,7 @@ async function selectActivity(id, pushHistory = true) {
   if (pushHistory) history.pushState({ page: 'dashboard', activityId: id }, '', `/activity/${id}`);
   // Switch to dashboard layout
   setNavActive('dashboard');
+  setMobileMenuBtn(true);
   document.getElementById('connections-page').style.display = 'none';
   document.querySelector('.shell').classList.add('sidebar-open');
   document.getElementById('home-feed').style.display = 'none';
@@ -3914,7 +4433,7 @@ async function selectActivity(id, pushHistory = true) {
   const mobileBack = window.innerWidth <= 767
     ? `<div onclick="goBackToFeed()" style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);position:sticky;top:0;z-index:50;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;"><path d="M19 12H5m7-7-7 7 7 7"/></svg>All runs</div>`
     : '';
-  detail.innerHTML = mobileBack + `<div class="loading-state"><div class="spinner"></div> Loading stream data…</div>`;
+  detail.innerHTML = mobileBack + buildSkeletonDetail();
 
   try {
     [streamData, detailedActivity] = await Promise.all([
@@ -3935,6 +4454,8 @@ async function selectActivity(id, pushHistory = true) {
       };
     }
     renderDetail(currentActivity, streamData);
+    revealPage(detail);
+    fetchAndShowWeather(currentActivity); // non-blocking — populates badge when ready
   } catch(e) {
     detail.innerHTML = `<div class="detail"><div class="error-banner">Failed to load stream: ${e.message}</div></div>`;
   }
@@ -3973,6 +4494,7 @@ function renderDetail(act, streams) {
       <div class="detail-header">
         <div class="detail-title">${act.name}<span class="type-badge">${wtype}</span></div>
         <div class="detail-meta">${fmtDate(act.start_date_local)}${act.location_city ? ' · ' + act.location_city : ''}${detailedActivity?.gear?.name ? ' · ' + detailedActivity.gear.name : ''}${detailedActivity?.device_name ? ' · ' + detailedActivity.device_name : ''}</div>
+        <div id="weather-badge" class="weather-badge"></div>
         ${(() => { const n = getMeaningfulPRs().length; return n > 0 ? `<button onclick="scrollToMapAndShowPRs()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(252,76,2,0.1);border:1px solid var(--orange-glow);border-radius:6px;padding:3px 10px;font-size:11px;font-family:var(--mono);color:var(--orange);margin-top:6px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='rgba(252,76,2,0.18)'" onmouseout="this.style.background='rgba(252,76,2,0.1)'">🏅 ${n} all-time PR${n > 1 ? 's' : ''} on this run<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px;opacity:0.7;"><path d="m9 18 6-6-6-6"/></svg></button>` : ''; })()}
       </div>
 
@@ -5821,5 +6343,22 @@ init();
     </div>
   </div>
 </div>
+
+<!-- MOBILE ACTIVITY DRAWER (outside shell so fixed position isn't clipped) -->
+<div id="drawer-overlay" onclick="closeMobileDrawer()"></div>
+<div id="mobile-drawer">
+  <div class="drawer-head">
+    <span>Runs</span>
+    <button class="drawer-close" onclick="closeMobileDrawer()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer-search-wrap">
+    <input class="drawer-search" id="drawer-search" type="text" placeholder="Search runs…" oninput="filterDrawerList(this.value)" autocomplete="off">
+  </div>
+  <div class="drawer-count" id="drawer-count"></div>
+  <div class="drawer-list" id="drawer-list"></div>
+</div>
+
 </body>
 </html>
