@@ -3686,8 +3686,8 @@ function openMobileDrawer() {
 }
 
 function closeMobileDrawer() {
-  document.getElementById('mobile-drawer').classList.remove('open');
-  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('mobile-drawer')?.classList.remove('open');
+  document.getElementById('drawer-overlay')?.classList.remove('open');
 }
 
 function filterDrawerList(query) {
