@@ -2073,15 +2073,19 @@ async function refreshStravaToken(refreshToken) {
 
 // ─── API ───
 async function apiFetch(path) {
-  const tokenData = getToken();
-  if (tokenData?.refresh_token && tokenData.expires_at && Date.now() / 1000 > tokenData.expires_at - 60) {
+  let tokenData = getToken();
+  if (!tokenData?.access_token) { clearToken(); location.reload(); return; }
+
+  if (tokenData.refresh_token && tokenData.expires_at && Date.now() / 1000 > tokenData.expires_at - 60) {
     try {
       const refreshed = await refreshStravaToken(tokenData.refresh_token);
       saveToken(refreshed);
+      tokenData = refreshed;
     } catch(e) { clearToken(); location.reload(); return; }
   }
-  const r = await fetch('https://www.strava.com/api/v3' + path, { headers: { Authorization: `Bearer ${token}` } });
-  if (r.status === 401) { clearToken(); location.reload(); }
+
+  const r = await fetch('https://www.strava.com/api/v3' + path, { headers: { Authorization: `Bearer ${tokenData.access_token}` } });
+  if (r.status === 401) { clearToken(); location.reload(); return; }
   return r.json();
 }
 // Safe variant for non-critical background calls — returns null on any error
@@ -2089,7 +2093,9 @@ async function apiFetch(path) {
 // require scopes we don't have (e.g. /athlete/zones needs profile:read_all).
 async function apiFetchSafe(path) {
   try {
-    const r = await fetch('https://www.strava.com/api/v3' + path, { headers: { Authorization: `Bearer ${token}` } });
+    const tokenData = getToken();
+    if (!tokenData?.access_token) return null;
+    const r = await fetch('https://www.strava.com/api/v3' + path, { headers: { Authorization: `Bearer ${tokenData.access_token}` } });
     if (!r.ok) return null;
     return r.json();
   } catch { return null; }
@@ -2244,7 +2250,9 @@ async function showApp(athlete) {
     const count = document.getElementById('sidebar-count');
     if (count) count.textContent = `${activities.length} runs loaded`;
   } catch(e) {
-    document.getElementById('activity-list').innerHTML = `<div class="error-banner" style="margin:12px;">${e.message}</div>`;
+    const errHtml = `<div class="error-banner" style="margin:12px;">${e.message}<br><button onclick="location.reload()" style="margin-top:8px;padding:4px 12px;background:var(--orange);color:#000;border:none;border-radius:4px;cursor:pointer;font-size:12px;">Retry</button></div>`;
+    document.getElementById('activity-list').innerHTML = errHtml;
+    document.getElementById('activity-tiles').innerHTML = errHtml;
   }
 }
 
