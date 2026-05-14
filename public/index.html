@@ -70,27 +70,6 @@
     overflow-y: auto; overflow-x: hidden; height: 100%; background: var(--bg);
     display: flex; flex-direction: column;
   }
-  #home-feed::before,
-  #home-feed::after {
-    content: '';
-    position: fixed;
-    left: 50%; transform: translateX(-50%);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 0;
-  }
-  #home-feed::before {
-    top: -40px;
-    width: 320vw; height: 320vw;
-    max-width: 5000px;
-    background: radial-gradient(circle, rgba(6,182,212,0.65) 0%, rgba(6,182,212,0.28) 30%, transparent 72%);
-  }
-  #home-feed::after {
-    bottom: -40px;
-    width: 320vw; height: 320vw;
-    max-width: 5000px;
-    background: radial-gradient(circle, rgba(252,76,2,0.65) 0%, rgba(252,76,2,0.28) 30%, transparent 72%);
-  }
   #home-feed > * {
     position: relative;
     z-index: 1;
@@ -121,15 +100,38 @@
     max-width: 820px; width: 100%; margin: 0 auto;
     box-sizing: border-box;
   }
+  @keyframes tileEnter {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   .activity-tile {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 14px; overflow: hidden; cursor: pointer;
-    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1), box-shadow 0.18s ease;
+    animation: tileEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  .activity-tile:hover {
-    border-color: var(--orange-glow);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.4), inset 0 0 0 1px var(--orange-glow);
+  /* Overlay sits above Leaflet map layers (z ~200-700) so border shows on all 4 sides */
+  .activity-tile::after {
+    content: ''; position: absolute; inset: 0;
+    border-radius: 14px; border: 1.5px solid transparent;
+    pointer-events: none; z-index: 999;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  /* Only apply hover lift on real pointer devices — prevents sticky-hover on iOS/Android tap */
+  @media (hover: hover) and (pointer: fine) {
+    .activity-tile:hover {
+      transform: translateY(-5px);
+      box-shadow:
+        0 2px 6px rgba(0,0,0,0.3),
+        0 10px 28px rgba(0,0,0,0.4),
+        0 24px 48px rgba(0,0,0,0.25),
+        0 0 40px rgba(252,76,2,0.08);
+    }
+    .activity-tile:hover::after {
+      border-color: rgba(252,76,2,0.75);
+      box-shadow: inset 0 0 0 1px rgba(252,76,2,0.25);
+    }
   }
   .tile-map {
     width: 100%; height: 260px; background: #1a1a1a; overflow: hidden;
@@ -163,6 +165,13 @@
   .sidebar-back:hover { color: var(--orange); }
 
   /* ─── TOPBAR ─── */
+  #recovery-halo {
+    position: fixed; top: 0; left: 0; right: 0; height: 2px;
+    z-index: 10000; pointer-events: none;
+    opacity: 0; transition: opacity 1.2s ease, background 1.2s ease;
+  }
+  #recovery-halo.visible { opacity: 1; }
+
   .topbar {
     grid-column: 1 / -1;
     display: flex;
@@ -170,7 +179,9 @@
     justify-content: space-between;
     padding: 0 24px;
     border-bottom: 1px solid var(--border);
-    background: var(--bg);
+    background: rgba(14,15,15,0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     gap: 16px;
   }
 
@@ -759,7 +770,9 @@
   .sidebar {
     border-right: 1px solid var(--border);
     overflow-y: auto;
-    background: var(--surface);
+    background: rgba(22,23,24,0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     padding: 20px 0;
   }
 
@@ -1397,6 +1410,7 @@
 </head>
 <body>
 
+<div id="recovery-halo"></div>
 <div class="shell" id="shell">
 
   <!-- TOPBAR -->
@@ -2247,6 +2261,7 @@ async function showApp(athlete) {
       if (statsRes) { athleteStats = statsRes; renderAthleteStats(); }
       if (athleteRes?.shoes) athleteShoes = athleteRes.shoes;
     });
+    fetchRecoveryHalo();
     const count = document.getElementById('sidebar-count');
     if (count) count.textContent = `${activities.length} runs loaded`;
   } catch(e) {
@@ -2370,6 +2385,9 @@ function renderHomeFeed(acts) {
     grid.innerHTML = `<div style="padding:60px;text-align:center;color:var(--muted);font-size:13px;">No runs match your filters</div>`;
   } else {
     grid.innerHTML = acts.map(a => buildActivityTile(a)).join('');
+    grid.querySelectorAll('.activity-tile').forEach((el, i) => {
+      el.style.animationDelay = `${Math.min(i * 40, 360)}ms`;
+    });
     initTileMaps();
   }
   if (count) count.textContent = `${acts.length} of ${activities.length} runs`;
@@ -2409,6 +2427,51 @@ function clearFeedFilters() {
   applyFeedFilters();
 }
 
+function updateRecoveryHalo(score) {
+  const halo = document.getElementById('recovery-halo');
+  if (!halo || score == null) return;
+  const color = score >= 67 ? '#4ade80' : score >= 34 ? '#fbbf24' : '#f87171';
+  halo.style.background = `linear-gradient(90deg, transparent 0%, ${color} 30%, ${color} 70%, transparent 100%)`;
+  halo.classList.add('visible');
+}
+
+async function fetchRecoveryHalo() {
+  const tok = getWhoopToken();
+  if (!tok) return;
+  // Use cached history first
+  if (whoopRecoveryHistory?.length) {
+    const r = whoopRecoveryHistory.find(r => r.score?.recovery_score > 0);
+    if (r) { updateRecoveryHalo(r.score.recovery_score); return; }
+  }
+  try {
+    const resp = await fetch('/.netlify/functions/whoop-recovery', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: tok.access_token })
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const latest = (data.records || []).find(r => r.score?.recovery_score > 0);
+    if (latest) updateRecoveryHalo(latest.score.recovery_score);
+  } catch {}
+}
+
+function countUp(el, end, duration) {
+  if (!end) return;
+  const prefix   = el.dataset.countupPrefix   || '';
+  const decimals = +(el.dataset.countupDecimals || 0);
+  const pfx = end > 0 && prefix ? prefix : '';
+  const abs = Math.abs(end), sign = end < 0 ? -1 : 1;
+  el.textContent = pfx + (0).toFixed(decimals);
+  const t0 = performance.now();
+  const tick = ts => {
+    const p = Math.min((ts - t0) / duration, 1);
+    const v = abs * (1 - Math.pow(1 - p, 3)) * sign;
+    el.textContent = pfx + (decimals ? v.toFixed(decimals) : Math.round(v).toLocaleString());
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 function renderAthleteStats() {
   if (!athleteStats) return;
   const el = document.getElementById('athlete-stats');
@@ -2423,12 +2486,13 @@ function renderAthleteStats() {
     ${secs.map(s => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;display:flex;gap:20px;align-items:center;flex:1;min-width:200px;">
       <div style="font-size:9px;color:var(--faint);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;min-width:70px;">${s.label}</div>
       <div style="display:flex;gap:16px;">
-        <div><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono);">${Math.round((s.d?.distance||0)/1000).toLocaleString()}<span style="font-size:9px;color:var(--faint);margin-left:2px;">km</span></div><div style="font-size:9px;color:var(--faint);">Distance</div></div>
-        <div><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono);">${s.d?.count||0}</div><div style="font-size:9px;color:var(--faint);">Runs</div></div>
+        <div><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono);"><span data-countup="${Math.round((s.d?.distance||0)/1000)}">0</span><span style="font-size:9px;color:var(--faint);margin-left:2px;">km</span></div><div style="font-size:9px;color:var(--faint);">Distance</div></div>
+        <div><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono);"><span data-countup="${s.d?.count||0}">0</span></div><div style="font-size:9px;color:var(--faint);">Runs</div></div>
         <div><div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono);">${fmtTime(s.d?.moving_time||0)}</div><div style="font-size:9px;color:var(--faint);">Time</div></div>
       </div>
     </div>`).join('')}
   </div>`;
+  el.querySelectorAll('[data-countup]').forEach(n => countUp(n, +n.dataset.countup, 900));
 }
 
 // ─── FILTERS ───
@@ -3154,14 +3218,15 @@ function buildOvTiles(container, bounds) {
 
   container.innerHTML = `
     <div class="ov-tiles-grid">
-      ${tile('Runs',       curr.count||'0',                         ovCmp(curr.count,  prev.count,  false, lbl))}
-      ${tile('Distance',   curr.distKm > 0 ? curr.distKm+'&thinsp;km' : '—',  ovCmp(curr.distKm, prev.distKm, false, lbl))}
+      ${tile('Runs',       curr.count > 0 ? `<span data-countup="${curr.count}">0</span>` : '0',  ovCmp(curr.count,  prev.count,  false, lbl))}
+      ${tile('Distance',   curr.distKm > 0 ? `<span data-countup="${curr.distKm}">0</span>&thinsp;km` : '—',  ovCmp(curr.distKm, prev.distKm, false, lbl))}
       ${tile('Moving time',curr.secs > 0 ? fmtT(curr.secs) : '—',            ovCmp(curr.secs,   prev.secs,   false, lbl))}
-      ${tile('Elevation',  curr.elevM > 0 ? curr.elevM+'&thinsp;m' : '—',    ovCmp(curr.elevM,  prev.elevM,  false, lbl))}
-      ${tile('Avg HR',     curr.avgHR ? curr.avgHR+'&thinsp;bpm' : '—',       ovCmp(curr.avgHR,  prev.avgHR,  null,  lbl))}
+      ${tile('Elevation',  curr.elevM > 0 ? `<span data-countup="${curr.elevM}">0</span>&thinsp;m` : '—',    ovCmp(curr.elevM,  prev.elevM,  false, lbl))}
+      ${tile('Avg HR',     curr.avgHR ? `<span data-countup="${curr.avgHR}">0</span>&thinsp;bpm` : '—',      ovCmp(curr.avgHR,  prev.avgHR,  null,  lbl))}
       ${tile('Avg Pace',   curr.avgSpd ? fmtPace(curr.avgSpd)+'/km' : '—',   ovCmp(curr.avgSpd, prev.avgSpd, false, lbl))}
     </div>
     ${typeChips ? `<div class="ov-types-row">${typeChips}</div>` : ''}`;
+  container.querySelectorAll('[data-countup]').forEach(n => countUp(n, +n.dataset.countup, 800));
 }
 
 function buildOvCalendar(container) {
@@ -3971,24 +4036,25 @@ function buildTrainingStats() {
   el.innerHTML = `
     <div class="tl-stat-card">
       <div class="tl-stat-label">Fitness (CTL)</div>
-      <div class="tl-stat-value" style="color:#60a5fa;">${Math.round(ctl)}</div>
+      <div class="tl-stat-value" style="color:#60a5fa;" data-countup="${Math.round(ctl)}">0</div>
       <div class="tl-stat-sub">42-day avg load</div>
     </div>
     <div class="tl-stat-card">
       <div class="tl-stat-label">Fatigue (ATL)</div>
-      <div class="tl-stat-value" style="color:#fb7185;">${Math.round(atl)}</div>
+      <div class="tl-stat-value" style="color:#fb7185;" data-countup="${Math.round(atl)}">0</div>
       <div class="tl-stat-sub">7-day avg load</div>
     </div>
     <div class="tl-stat-card">
       <div class="tl-stat-label">Form (TSB)</div>
-      <div class="tl-stat-value" style="color:${status.color};">${tsb > 0 ? '+' : ''}${Math.round(tsb)}</div>
+      <div class="tl-stat-value" style="color:${status.color};" data-countup="${Math.round(tsb)}" data-countup-prefix="${tsb > 0 ? '+' : ''}">0</div>
       <div class="tl-stat-sub" style="color:${status.color};">${status.label}</div>
     </div>
     <div class="tl-stat-card">
       <div class="tl-stat-label">7-day load</div>
-      <div class="tl-stat-value">${load7}</div>
+      <div class="tl-stat-value" data-countup="${load7}">0</div>
       <div class="tl-stat-sub">28-day: ${load28}</div>
     </div>`;
+  el.querySelectorAll('[data-countup]').forEach(n => countUp(n, +n.dataset.countup, 700));
 }
 
 // ─── PR BOARD ───
@@ -4104,11 +4170,11 @@ function renderPRBoard() {
 
     <div class="prb-totals">
       <div class="prb-total-card">
-        <div class="prb-total-val">${d.totalRuns}</div>
+        <div class="prb-total-val"><span data-countup="${d.totalRuns}">0</span></div>
         <div class="prb-total-lbl">Total runs</div>
       </div>
       <div class="prb-total-card">
-        <div class="prb-total-val">${Math.round(d.totalDist/1000)}<span class="prb-total-unit">km</span></div>
+        <div class="prb-total-val"><span data-countup="${Math.round(d.totalDist/1000)}">0</span><span class="prb-total-unit">km</span></div>
         <div class="prb-total-lbl">Total distance</div>
       </div>
       <div class="prb-total-card">
@@ -4116,11 +4182,11 @@ function renderPRBoard() {
         <div class="prb-total-lbl">Moving time</div>
       </div>
       <div class="prb-total-card">
-        <div class="prb-total-val">${Math.round(d.totalElev/1000)}<span class="prb-total-unit">km</span></div>
+        <div class="prb-total-val"><span data-countup="${Math.round(d.totalElev/1000)}">0</span><span class="prb-total-unit">km</span></div>
         <div class="prb-total-lbl">Total elevation</div>
       </div>
       <div class="prb-total-card">
-        <div class="prb-total-val">${d.weeklyKm.toFixed(1)}<span class="prb-total-unit">km</span></div>
+        <div class="prb-total-val"><span data-countup="${d.weeklyKm.toFixed(1)}" data-countup-decimals="1">0</span><span class="prb-total-unit">km</span></div>
         <div class="prb-total-lbl">Avg per week</div>
       </div>
     </div>
@@ -4164,6 +4230,7 @@ function renderPRBoard() {
       </div>
     </div>
   </div>`;
+  el.querySelectorAll('[data-countup]').forEach(n => countUp(n, +n.dataset.countup, 800));
 }
 
 // ─── TRAINING EXPORT HELPERS ───
@@ -5751,6 +5818,7 @@ async function fetchWhoopData() {
 
     if (data.new_token) saveWhoopToken(data.new_token);
     whoopData = data;
+    updateRecoveryHalo(data.recovery?.score ?? null);
     renderWhoopData(data);
   } catch (e) {
     if (section) section.innerHTML = `
