@@ -79,6 +79,40 @@
     flex-shrink: 0;
     max-width: 820px; width: 100%; margin: 0 auto; box-sizing: border-box;
   }
+  /* ─── WEEK SNAPSHOT ─── */
+  .week-snap-wrap {
+    padding: 14px 24px 0;
+    max-width: 820px; width: 100%; margin: 0 auto; box-sizing: border-box;
+    flex-shrink: 0;
+  }
+  .week-snap-heading {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--faint); font-family: var(--mono);
+    margin-bottom: 8px;
+  }
+  .week-snap-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .week-snap-tile {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 13px;
+  }
+  .week-snap-lbl {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--faint); font-family: var(--mono);
+    margin-bottom: 5px;
+  }
+  .week-snap-val {
+    font-size: 19px; font-weight: 800; letter-spacing: -0.03em;
+    line-height: 1; margin-bottom: 4px;
+  }
+  .week-snap-delta {
+    font-size: 9px; font-family: var(--mono); font-weight: 600;
+  }
+  .week-snap-delta.up   { color: #4ade80; }
+  .week-snap-delta.down { color: #f87171; }
+  .week-snap-delta.flat { color: var(--faint); }
+
   .feed-filter-bar {
     display: flex; flex-direction: column; gap: 12px;
     padding: 14px 24px 0;
@@ -1069,6 +1103,7 @@
     background: var(--bg); border: 1px solid var(--border2);
     border-radius: 6px; padding: 6px 10px;
     color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; cursor: pointer;
+    min-width: 0; width: 0; flex: 1; box-sizing: border-box;
   }
   .effort-select:focus { border-color: var(--orange-glow); }
   .effort-hint { font-size: 11px; color: var(--faint); font-family: var(--mono); }
@@ -1227,6 +1262,8 @@
     #copy-btn { font-size: 11px !important; padding: 5px 11px !important; }
 
     /* ── Home feed ── */
+    .week-snap-wrap { padding: 12px 14px 0; }
+    .week-snap-val  { font-size: 16px; }
     .feed-topbar    { padding: 12px 14px 0; }
     .feed-filter-bar {
       padding: 10px 14px 0; gap: 10px;
@@ -1545,6 +1582,7 @@
       <div class="feed-topbar">
         <div id="athlete-stats"></div>
       </div>
+      <div id="week-snapshot"></div>
       <div class="feed-filter-bar">
         <div class="filter-search" style="flex:1;min-width:180px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;color:var(--faint);flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -2273,6 +2311,7 @@ async function showApp(athlete) {
     trainingLoadSeries = null;
     prBoardData = null;
     buildRunTypeIndex();
+    renderWeekSnapshot();
     applyFeedFilters();
     applyFilters();
     handleRoute(); // open directly to an activity if URL is /activity/:id
@@ -2520,6 +2559,81 @@ function renderAthleteStats() {
     </div>`).join('')}
   </div>`;
   el.querySelectorAll('[data-countup]').forEach(n => countUp(n, +n.dataset.countup, 900));
+}
+
+// ─── WEEK SNAPSHOT ───
+function renderWeekSnapshot() {
+  const el = document.getElementById('week-snapshot');
+  if (!el || !activities.length) return;
+
+  const now = new Date();
+  const dayOfWeek = (now.getDay() + 6) % 7; // 0=Mon
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - dayOfWeek);
+  weekStart.setHours(0, 0, 0, 0);
+
+  const inWeek = (a, start, end) => {
+    const d = new Date(a.start_date_local);
+    return d >= start && (!end || d < end);
+  };
+
+  const stats = (acts) => ({
+    runs: acts.length,
+    dist: acts.reduce((s, a) => s + (a.distance || 0), 0) / 1000,
+    elev: acts.reduce((s, a) => s + (a.total_elevation_gain || 0), 0)
+  });
+
+  const curr = stats(activities.filter(a => inWeek(a, weekStart)));
+
+  // Up to 4 previous complete weeks for the rolling average
+  const weekMs = 7 * 86400000;
+  const prevStats = [];
+  for (let i = 1; i <= 4; i++) {
+    const s = new Date(weekStart.getTime() - i * weekMs);
+    const e = new Date(weekStart.getTime() - (i - 1) * weekMs);
+    const w = stats(activities.filter(a => inWeek(a, s, e)));
+    if (w.runs > 0) prevStats.push(w);
+  }
+
+  if (!prevStats.length) { el.innerHTML = ''; return; }
+
+  const avg = (key) => prevStats.reduce((s, w) => s + w[key], 0) / prevStats.length;
+  const avgRuns = avg('runs'), avgDist = avg('dist'), avgElev = avg('elev');
+
+  const delta = (curr, avg, unit, decimals = 0) => {
+    const diff = curr - avg;
+    const threshold = Math.max(avg * 0.08, decimals ? 1 : 0.5);
+    if (Math.abs(diff) < threshold) return `<span class="week-snap-delta flat">≈ avg</span>`;
+    const sign = diff > 0 ? '+' : '−';
+    const cls  = diff > 0 ? 'up' : 'down';
+    const val  = Math.abs(diff) < 10 ? Math.abs(diff).toFixed(decimals) : Math.round(Math.abs(diff));
+    return `<span class="week-snap-delta ${cls}">${sign}${val}${unit} vs avg</span>`;
+  };
+
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  el.innerHTML = `<div class="week-snap-wrap">
+    <div class="week-snap-heading">This week &middot; ${days[dayOfWeek]}</div>
+    <div class="week-snap-grid">
+      <div class="week-snap-tile">
+        <div class="week-snap-lbl">Runs</div>
+        <div class="week-snap-val"><span data-countup="${curr.runs}">0</span></div>
+        ${delta(curr.runs, avgRuns, '')}
+      </div>
+      <div class="week-snap-tile">
+        <div class="week-snap-lbl">Distance</div>
+        <div class="week-snap-val"><span data-countup="${curr.dist.toFixed(1)}" data-countup-decimals="1">0</span><span style="font-size:10px;color:var(--faint);margin-left:2px;">km</span></div>
+        ${delta(curr.dist, avgDist, 'km', 1)}
+      </div>
+      <div class="week-snap-tile">
+        <div class="week-snap-lbl">Elevation</div>
+        <div class="week-snap-val"><span data-countup="${Math.round(curr.elev)}">0</span><span style="font-size:10px;color:var(--faint);margin-left:2px;">m</span></div>
+        ${delta(curr.elev, avgElev, 'm')}
+      </div>
+    </div>
+  </div>`;
+
+  el.querySelectorAll('[data-countup]').forEach(n => countUp(n, +n.dataset.countup, 700));
 }
 
 // ─── FILTERS ───
