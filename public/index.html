@@ -2248,7 +2248,7 @@ async function showApp(athlete) {
   document.getElementById('main-panel').style.display = 'block';
   document.getElementById('topbar-nav').style.display = 'flex';
   document.getElementById('conn-status-bar').style.display = 'flex';
-  document.getElementById('mobile-bottom-nav').style.display = 'flex';
+  document.getElementById('mobile-bottom-nav')?.style.setProperty('display', 'flex');
   renderConnStatusBar();
   showPage('activities');
 
