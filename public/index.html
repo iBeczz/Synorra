@@ -164,6 +164,9 @@
   }
   .sidebar-back:hover { color: var(--orange); }
 
+  /* Hidden on desktop and before login; mobile CSS + app-ready class shows it */
+  #mobile-bottom-nav { display: none; }
+
   /* ─── TOPBAR ─── */
   #recovery-halo {
     position: fixed; top: 0; left: 0; right: 0; height: 2px;
@@ -1347,7 +1350,7 @@
     #conn-status-bar { display: none !important; }
 
     /* ── Bottom nav bar ── */
-    #mobile-bottom-nav {
+    body.app-ready #mobile-bottom-nav {
       display: flex;
       position: fixed; bottom: 0; left: 0; right: 0;
       background: rgba(14,15,15,0.93);
@@ -2245,7 +2248,7 @@ async function showApp(athlete) {
   document.getElementById('main-panel').style.display = 'block';
   document.getElementById('topbar-nav').style.display = 'flex';
   document.getElementById('conn-status-bar').style.display = 'flex';
-  document.getElementById('mobile-bottom-nav')?.style.setProperty('display', 'flex');
+  document.body.classList.add('app-ready');
   renderConnStatusBar();
   showPage('activities');
 
@@ -6489,7 +6492,7 @@ init();
 </div>
 
 <!-- MOBILE BOTTOM NAV (hidden on desktop via CSS, shown only ≤767px) -->
-<nav id="mobile-bottom-nav" style="display:none;">
+<nav id="mobile-bottom-nav">
 
   <button class="mbn-tab active" data-page="activities" onclick="showPage('activities')">
     <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
