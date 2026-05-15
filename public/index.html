@@ -1342,19 +1342,45 @@
     /* ── Loading ── */
     .loading-state { min-height: 140px; font-size: 12px; }
 
-    /* ── Nav: horizontally scrollable — fits all 7 tabs without wrapping ── */
-    .topbar-nav {
-      min-width: 0;
-      overflow-x: auto;
+    /* ── Nav: hidden on mobile — replaced by bottom bar ── */
+    .topbar-nav { display: none !important; }
+    #conn-status-bar { display: none !important; }
+
+    /* ── Bottom nav bar ── */
+    #mobile-bottom-nav {
+      display: flex;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(14,15,15,0.93);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      z-index: 500;
+      overflow-x: auto; overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      justify-content: flex-start;
-      flex: 1;
+      padding: 0 2px;
+      padding-bottom: env(safe-area-inset-bottom);
     }
-    .topbar-nav::-webkit-scrollbar { display: none; }
-    .nav-tab { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
-    /* Connection pills take too much space on mobile — managed via nav instead */
-    #conn-status-bar { display: none !important; }
+    #mobile-bottom-nav::-webkit-scrollbar { display: none; }
+    .mbn-tab {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 10px 16px 10px;
+      border: none; background: none; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
+      color: var(--faint); transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mbn-tab svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .mbn-tab span { font-size: 9px; font-family: var(--mono); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+    .mbn-tab.active { color: var(--orange); }
+
+    /* Bottom nav spacing — keep content above the bar */
+    #home-feed        { padding-bottom: 68px !important; }
+    #overview-page    { padding-bottom: 68px !important; }
+    #insights-page    { padding-bottom: 68px !important; }
+    #training-page    { padding-bottom: 68px !important; }
+    #pr-board-page    { padding-bottom: 68px !important; }
+    #connections-page { padding-bottom: 68px !important; }
+    .detail           { padding-bottom: 68px !important; }
 
     /* ── PR Board ── */
     .prb-totals      { grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -2222,6 +2248,7 @@ async function showApp(athlete) {
   document.getElementById('main-panel').style.display = 'block';
   document.getElementById('topbar-nav').style.display = 'flex';
   document.getElementById('conn-status-bar').style.display = 'flex';
+  document.getElementById('mobile-bottom-nav').style.display = 'flex';
   renderConnStatusBar();
   showPage('activities');
 
@@ -2543,7 +2570,7 @@ function clearFilters() {
 }
 
 function setNavActive(page) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.page === page));
+  document.querySelectorAll('.nav-tab, .mbn-tab').forEach(t => t.classList.toggle('active', t.dataset.page === page));
 }
 
 function showPage(page, pushHistory = true) {
@@ -6463,6 +6490,46 @@ init();
   <div class="drawer-count" id="drawer-count"></div>
   <div class="drawer-list" id="drawer-list"></div>
 </div>
+
+<!-- MOBILE BOTTOM NAV (hidden on desktop via CSS, shown only ≤767px) -->
+<nav id="mobile-bottom-nav" style="display:none;">
+
+  <button class="mbn-tab active" data-page="activities" onclick="showPage('activities')">
+    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    <span>Runs</span>
+  </button>
+
+  <button class="mbn-tab" data-page="overview" onclick="showPage('overview')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <span>Overview</span>
+  </button>
+
+  <button class="mbn-tab" data-page="dashboard" onclick="showPage('dashboard')">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Activity</span>
+  </button>
+
+  <button class="mbn-tab" data-page="training" onclick="showPage('training')">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Training</span>
+  </button>
+
+  <button class="mbn-tab" data-page="insights" onclick="showPage('insights')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+    <span>Insights</span>
+  </button>
+
+  <button class="mbn-tab" data-page="prboard" onclick="showPage('prboard')">
+    <svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>
+    <span>Records</span>
+  </button>
+
+  <button class="mbn-tab" data-page="connections" onclick="showPage('connections')">
+    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+    <span>Connect</span>
+  </button>
+
+</nav>
 
 </body>
 </html>
