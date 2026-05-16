@@ -240,6 +240,81 @@
   .nav-tab:hover { color: var(--text); background: var(--surface2); }
   .nav-tab.active { color: var(--orange); }
 
+  /* ─── HEALTH PAGE ─── */
+  #health-page { display:none; height:100%; overflow-y:auto; overflow-x:hidden; }
+  .health-inner { max-width:860px; margin:0 auto; padding:40px; box-sizing:border-box; }
+  .health-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:28px; }
+  .health-title { font-size:22px; font-weight:700; letter-spacing:-0.04em; }
+  .health-date-row { display:flex; align-items:center; gap:10px; }
+  .health-date-input {
+    background:var(--surface); border:1px solid var(--border2); border-radius:8px;
+    padding:7px 12px; color:var(--text); font-family:var(--mono); font-size:12px;
+    outline:none; cursor:pointer; color-scheme:dark;
+  }
+  .health-date-input:focus { border-color:var(--orange-glow); }
+  .health-copy-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--orange); color:#fff; border:none; border-radius:8px;
+    padding:7px 14px; font-family:var(--sans); font-size:12px; font-weight:600;
+    cursor:pointer; transition:opacity 0.15s; white-space:nowrap;
+  }
+  .health-copy-btn:hover { opacity:0.85; }
+  .health-section { margin-bottom:28px; }
+  .health-section-head {
+    font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--faint); font-family:var(--mono); margin-bottom:14px;
+    padding-bottom:8px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:8px;
+  }
+  .health-section-head::after { content:''; flex:1; height:1px; background:var(--border); }
+  /* Recovery score */
+  .health-recovery-grid { display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:start; }
+  .health-score-block { text-align:center; }
+  .health-score-num { font-size:64px; font-weight:900; letter-spacing:-0.06em; line-height:1; }
+  .health-score-label { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; font-family:var(--mono); margin-top:4px; }
+  .health-metrics-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .health-metric-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+  }
+  .health-metric-lbl { font-size:9px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--faint); font-family:var(--mono); margin-bottom:5px; }
+  .health-metric-val { font-size:22px; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+  .health-metric-unit { font-size:11px; color:var(--faint); margin-left:2px; }
+  /* Sleep */
+  .health-sleep-scores { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+  .health-sleep-score-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; text-align:center;
+  }
+  .health-sleep-score-val { font-size:26px; font-weight:800; letter-spacing:-0.04em; line-height:1; margin-bottom:3px; }
+  .health-sleep-score-lbl { font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--faint); font-family:var(--mono); }
+  /* Sleep stages bar */
+  .health-stage-bar { display:flex; height:10px; border-radius:6px; overflow:hidden; margin:14px 0 8px; gap:2px; }
+  .health-stage-seg { flex:var(--w); border-radius:3px; transition:flex 0.6s ease; }
+  .health-stage-legend { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+  .health-stage-dot { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+  .health-stage-item { display:flex; align-items:center; gap:5px; font-size:11px; font-family:var(--mono); color:var(--muted); }
+  /* Sleep detail row */
+  .health-sleep-detail { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:14px; }
+  .health-sleep-need {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:8px;
+  }
+  .health-sleep-need-head { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--faint); font-family:var(--mono); margin-bottom:10px; }
+  .health-need-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .health-need-row:last-child { border-bottom:none; }
+  .health-need-label { color:var(--muted); font-family:var(--mono); font-size:11px; }
+  .health-need-val { font-weight:700; font-family:var(--mono); font-size:12px; }
+  /* Strain */
+  .health-strain-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  @media (max-width:767px) {
+    .health-inner { padding:20px 14px; }
+    .health-recovery-grid { grid-template-columns:1fr; }
+    .health-metrics-grid { grid-template-columns:repeat(2,1fr); }
+    .health-sleep-scores { grid-template-columns:repeat(3,1fr); }
+    .health-sleep-detail { grid-template-columns:1fr; }
+    .health-strain-grid { grid-template-columns:repeat(2,1fr); }
+    .health-score-num { font-size:48px; }
+  }
+
   /* ─── PR BOARD ─── */
   .prb-inner { max-width: 1020px; margin: 0 auto; padding: 40px; box-sizing: border-box; }
   .prb-title { font-size: 22px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 4px; }
@@ -1415,7 +1490,7 @@
 
     /* Bottom nav spacing — keep content above the bar (bar height + safe area + buffer) */
     #home-feed, #overview-page, #insights-page, #training-page,
-    #pr-board-page, #connections-page, .detail {
+    #pr-board-page, #connections-page, #health-page, .detail {
       padding-bottom: calc(env(safe-area-inset-bottom) + 90px) !important;
     }
 
@@ -1497,6 +1572,7 @@
       <button class="nav-tab" data-page="training" onclick="showPage('training')">Training Load</button>
       <button class="nav-tab" data-page="insights" onclick="showPage('insights')">Insights</button>
       <button class="nav-tab" data-page="prboard" onclick="showPage('prboard')">PR Board</button>
+      <button class="nav-tab" data-page="health" onclick="showPage('health')">Health</button>
       <button class="nav-tab" data-page="connections" onclick="showPage('connections')">Connections</button>
     </nav>
     <div class="topbar-right" id="topbar-right">
@@ -1638,6 +1714,9 @@
 
     <!-- CONNECTIONS PAGE -->
     <div id="connections-page" style="display:none;"></div>
+
+    <!-- HEALTH PAGE -->
+    <div id="health-page"></div>
   </div>
 
 </div>
@@ -2704,6 +2783,7 @@ function showPage(page, pushHistory = true) {
   const prPage       = document.getElementById('pr-board-page');
   const insightsPage = document.getElementById('insights-page');
   const overviewPage = document.getElementById('overview-page');
+  const healthPage   = document.getElementById('health-page');
 
   // Hide everything
   feed.style.display          = 'none';
@@ -2714,6 +2794,7 @@ function showPage(page, pushHistory = true) {
   prPage.style.display        = 'none';
   insightsPage.style.display  = 'none';
   overviewPage.style.display  = 'none';
+  healthPage.style.display    = 'none';
   sidebar.style.display       = 'none';
   shell.classList.remove('sidebar-open');
   document.getElementById('copy-btn').style.display = 'none';
@@ -2753,6 +2834,10 @@ function showPage(page, pushHistory = true) {
     trainPage.style.display = 'block';
     renderTrainingPage();
     revealPage(trainPage);
+  } else if (page === 'health') {
+    healthPage.style.display = 'block';
+    renderWhoopHealthPage();
+    revealPage(healthPage);
   } else if (page === 'connections') {
     connPage.style.display = 'block';
     renderConnectionsPage();
@@ -3935,6 +4020,303 @@ function setMobileMenuBtn(show) {
   document.getElementById('mobile-menu-btn')?.classList.toggle('show', show);
 }
 
+// ─── HEALTH PAGE ───
+let whoopHealthData  = null;
+let whoopHealthDate  = null;
+
+async function renderWhoopHealthPage(dateOverride) {
+  const el = document.getElementById('health-page');
+  if (!el) return;
+  const tok = getWhoopToken();
+  const today = new Date().toISOString().slice(0, 10);
+  const date  = dateOverride || whoopHealthDate || today;
+  whoopHealthDate = date;
+
+  if (!tok) {
+    el.innerHTML = `<div class="health-inner">
+      <div class="health-header"><div class="health-title">Health &amp; Sleep</div></div>
+      <div style="padding:60px;text-align:center;color:var(--muted);font-size:13px;font-family:var(--mono);">
+        Connect Whoop on the Connections page to view health data.
+      </div></div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="health-inner">
+    <div class="health-header"><div class="health-title">Health &amp; Sleep</div></div>
+    <div class="loading-state"><div class="spinner"></div> Fetching Whoop data…</div>
+  </div>`;
+
+  try {
+    const body = { access_token: tok.access_token, refresh_token: tok.refresh_token, expires_at: tok.expires_at };
+    if (date !== today) body.activity_start = `${date}T12:00:00`;
+    const resp = await fetch('/.netlify/functions/whoop-data', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.new_token) saveWhoopToken(data.new_token);
+    whoopHealthData = data;
+    buildHealthPage(el, data, date);
+  } catch(e) {
+    el.innerHTML = `<div class="health-inner"><div class="error-banner" style="margin-top:20px;">${escapeHtml(e.message)}<br><button onclick="renderWhoopHealthPage()" style="margin-top:8px;padding:4px 12px;background:var(--orange);color:#000;border:none;border-radius:4px;cursor:pointer;font-size:12px;">Retry</button></div></div>`;
+  }
+}
+
+function buildHealthPage(el, d, date) {
+  const rec = d.recovery, sl = d.sleep, cy = d.cycle, bo = d.body;
+
+  // ── Recovery ──────────────────────────────────────────────────────────────
+  const recColor = rec?.score >= 67 ? '#4ade80' : rec?.score >= 34 ? '#fbbf24' : rec?.score != null ? '#f87171' : 'var(--muted)';
+  const recHtml = rec ? `
+    <div class="health-recovery-grid">
+      <div class="health-score-block">
+        <div class="health-score-num" style="color:${recColor};">${rec.score ?? '—'}</div>
+        <div class="health-score-label" style="color:${recColor};">${rec.state || rec.score_state || ''}</div>
+        ${rec.user_calibrating ? `<div style="font-size:10px;color:var(--faint);font-family:var(--mono);margin-top:6px;">Calibrating</div>` : ''}
+      </div>
+      <div class="health-metrics-grid">
+        ${healthMetric('HRV', rec.hrv_rmssd != null ? rec.hrv_rmssd.toFixed(1) : '—', 'ms')}
+        ${healthMetric('Resting HR', rec.resting_hr != null ? Math.round(rec.resting_hr) : '—', 'bpm')}
+        ${healthMetric('SpO₂', rec.spo2 != null ? rec.spo2.toFixed(1) : '—', '%')}
+        ${healthMetric('Skin Temp', rec.skin_temp != null ? rec.skin_temp.toFixed(1) : '—', '°C')}
+      </div>
+    </div>` : `<div style="color:var(--faint);font-family:var(--mono);font-size:12px;">No recovery data for this date.</div>`;
+
+  // ── Sleep ─────────────────────────────────────────────────────────────────
+  let sleepHtml = `<div style="color:var(--faint);font-family:var(--mono);font-size:12px;">No sleep data for this date.</div>`;
+  if (sl) {
+    const inBed   = sl.in_bed_milli || 0;
+    const asleep  = inBed - (sl.awake_milli || 0);
+    const light   = sl.light_milli || 0;
+    const deep    = sl.deep_milli  || 0;
+    const rem     = sl.rem_milli   || 0;
+    const awakeMs = sl.awake_milli || 0;
+    const total   = light + deep + rem + awakeMs || 1;
+    const pct = v => ((v / total) * 100).toFixed(0);
+
+    const stages = [
+      { label:'Light',  ms:light,   color:'#60a5fa', key:'light' },
+      { label:'Deep',   ms:deep,    color:'#818cf8', key:'deep'  },
+      { label:'REM',    ms:rem,     color:'#22d3ee', key:'rem'   },
+      { label:'Awake',  ms:awakeMs, color:'#4b5563', key:'awake' },
+    ];
+
+    const stageBar = stages.map(s =>
+      `<div class="health-stage-seg" style="--w:${s.ms || 0.1};background:${s.color};"></div>`
+    ).join('');
+
+    const stageLegend = stages.map(s =>
+      `<div class="health-stage-item">
+        <div class="health-stage-dot" style="background:${s.color};"></div>
+        <span style="color:var(--text);font-weight:600;">${fmtMs(s.ms)}</span>&nbsp;${s.label}&nbsp;<span style="color:var(--faint);">${pct(s.ms)}%</span>
+      </div>`
+    ).join('');
+
+    const window = sl.start && sl.end
+      ? `${fmtClockFromIso(sl.start)} → ${fmtClockFromIso(sl.end)}`
+      : '';
+    const dateStr = sl.start ? new Date(sl.start).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }) : '';
+
+    // Sleep need breakdown
+    const needRows = [
+      ['Baseline',        sl.needed_baseline],
+      ['Strain debt',     sl.needed_strain],
+      ['Sleep debt',      sl.needed_debt],
+      ['Nap credit',      sl.needed_nap ? -sl.needed_nap : null],
+      ['Total needed',    sl.needed_milli],
+      ['Total in bed',    inBed],
+    ].filter(([,v]) => v != null && v !== 0).map(([lbl, v]) =>
+      `<div class="health-need-row">
+        <span class="health-need-label">${lbl}</span>
+        <span class="health-need-val">${fmtMs(Math.abs(v))}${v < 0 ? ' credit' : ''}</span>
+      </div>`
+    ).join('');
+
+    const scored = sl.score_state === 'SCORED';
+    sleepHtml = `
+      <div style="font-size:11px;color:var(--faint);font-family:var(--mono);margin-bottom:12px;">${dateStr}${window ? '&nbsp;·&nbsp;' + window : ''}&nbsp;·&nbsp;${fmtMs(asleep)} asleep</div>
+      ${scored ? `<div class="health-sleep-scores">
+        ${healthSleepScore(sl.performance, 'Performance', '%')}
+        ${healthSleepScore(sl.efficiency,  'Efficiency',  '%')}
+        ${healthSleepScore(sl.consistency, 'Consistency', '%')}
+      </div>` : `<div class="error-banner" style="margin-bottom:12px;font-size:11px;">Sleep ${sl.score_state || 'not yet scored'}</div>`}
+      <div class="health-stage-bar">${stageBar}</div>
+      <div class="health-stage-legend">${stageLegend}</div>
+      <div class="health-sleep-detail">
+        ${healthMetric('In bed',       fmtMs(inBed),   '')}
+        ${healthMetric('Asleep',       fmtMs(asleep),  '')}
+        ${healthMetric('Disturbances', sl.disturbances ?? '—', '')}
+        ${healthMetric('Sleep cycles', sl.cycles ?? '—', '')}
+        ${sl.respiratory_rate != null ? healthMetric('Resp. rate', sl.respiratory_rate.toFixed(1), 'rpm') : ''}
+      </div>
+      ${needRows ? `<div class="health-sleep-need"><div class="health-sleep-need-head">Sleep need breakdown</div>${needRows}</div>` : ''}`;
+  }
+
+  // ── Strain ────────────────────────────────────────────────────────────────
+  let strainHtml = `<div style="color:var(--faint);font-family:var(--mono);font-size:12px;">No strain data for this date.</div>`;
+  if (cy) {
+    const kcal = cy.kilojoule ? Math.round(cy.kilojoule * 0.239) : null;
+    const strainColor = cy.strain >= 18 ? '#f87171' : cy.strain >= 14 ? '#fb923c' : cy.strain >= 10 ? '#fbbf24' : '#4ade80';
+    const strainLabel = cy.strain >= 18 ? 'All Out' : cy.strain >= 14 ? 'Strenuous' : cy.strain >= 10 ? 'Moderate' : 'Light';
+    strainHtml = `<div class="health-strain-grid">
+      <div class="health-metric-card">
+        <div class="health-metric-lbl">Day Strain</div>
+        <div class="health-metric-val" style="color:${strainColor};">${cy.strain.toFixed(1)}<span class="health-metric-unit">${strainLabel}</span></div>
+      </div>
+      ${healthMetric('Avg HR', cy.avg_hr ? Math.round(cy.avg_hr) : '—', 'bpm')}
+      ${healthMetric('Max HR', cy.max_hr ? Math.round(cy.max_hr) : '—', 'bpm')}
+      ${kcal ? healthMetric('Calories', kcal.toLocaleString(), 'kcal') : ''}
+    </div>`;
+  }
+
+  // ── Body ──────────────────────────────────────────────────────────────────
+  let bodyHtml = '';
+  if (bo) {
+    const heightCm = bo.height_meter ? Math.round(bo.height_meter * 100) : null;
+    const weightKg = bo.weight_kilogram ? bo.weight_kilogram.toFixed(1) : null;
+    bodyHtml = `<div class="health-metrics-grid">
+      ${heightCm ? healthMetric('Height', heightCm, 'cm') : ''}
+      ${weightKg ? healthMetric('Weight', weightKg, 'kg') : ''}
+      ${bo.max_heart_rate ? healthMetric('Max HR', bo.max_heart_rate, 'bpm') : ''}
+    </div>`;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  el.innerHTML = `<div class="health-inner">
+    <div class="health-header">
+      <div class="health-title">Health &amp; Sleep</div>
+      <div class="health-date-row">
+        <input type="date" class="health-date-input" id="health-date-picker" value="${date}" max="${today}"
+          onchange="renderWhoopHealthPage(this.value)">
+        <button class="health-copy-btn" onclick="copyWhoopHealth()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy for AI
+        </button>
+      </div>
+    </div>
+
+    <div class="health-section">
+      <div class="health-section-head">Recovery</div>
+      ${recHtml}
+    </div>
+
+    <div class="health-section">
+      <div class="health-section-head">Sleep</div>
+      ${sleepHtml}
+    </div>
+
+    <div class="health-section">
+      <div class="health-section-head">Day Strain</div>
+      ${strainHtml}
+    </div>
+
+    ${bodyHtml ? `<div class="health-section"><div class="health-section-head">Body</div>${bodyHtml}</div>` : ''}
+  </div>`;
+}
+
+function healthMetric(lbl, val, unit) {
+  return `<div class="health-metric-card">
+    <div class="health-metric-lbl">${lbl}</div>
+    <div class="health-metric-val">${val}<span class="health-metric-unit">${unit}</span></div>
+  </div>`;
+}
+function healthSleepScore(val, lbl, unit) {
+  const v = val != null ? Math.round(val) : null;
+  const color = v >= 85 ? '#4ade80' : v >= 60 ? '#fbbf24' : v != null ? '#f87171' : 'var(--muted)';
+  return `<div class="health-sleep-score-card">
+    <div class="health-sleep-score-val" style="color:${color};">${v ?? '—'}${v != null ? unit : ''}</div>
+    <div class="health-sleep-score-lbl">${lbl}</div>
+  </div>`;
+}
+
+function copyWhoopHealth() {
+  const d = whoopHealthData;
+  if (!d) return;
+  const date = whoopHealthDate || new Date().toISOString().slice(0, 10);
+  const dateLabel = new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const lines = [`WHOOP HEALTH DATA — ${dateLabel}`, ''];
+
+  const rec = d.recovery, sl = d.sleep, cy = d.cycle, bo = d.body;
+
+  if (rec) {
+    lines.push('── RECOVERY ──');
+    lines.push(`Score:            ${rec.score ?? 'Unscored'} ${rec.score != null ? `(${rec.state})` : `(${rec.score_state})`}`);
+    if (rec.hrv_rmssd   != null) lines.push(`HRV (RMSSD):      ${rec.hrv_rmssd.toFixed(1)} ms`);
+    if (rec.resting_hr  != null) lines.push(`Resting HR:       ${Math.round(rec.resting_hr)} bpm`);
+    if (rec.spo2        != null) lines.push(`SpO₂:             ${rec.spo2.toFixed(1)}%`);
+    if (rec.skin_temp   != null) lines.push(`Skin temp:        ${rec.skin_temp.toFixed(1)}°C`);
+    if (rec.user_calibrating)    lines.push(`Note:             Device still calibrating`);
+    lines.push('');
+  }
+
+  if (sl) {
+    const inBed  = sl.in_bed_milli  || 0;
+    const asleep = inBed - (sl.awake_milli || 0);
+    const light  = sl.light_milli || 0;
+    const deep   = sl.deep_milli  || 0;
+    const rem    = sl.rem_milli   || 0;
+    const awake  = sl.awake_milli || 0;
+    const total  = light + deep + rem + awake || 1;
+    const pct = v => `${((v / total) * 100).toFixed(0)}%`;
+    const dateStr = sl.start ? new Date(sl.start).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }) : '';
+    const window  = sl.start && sl.end ? `${fmtClockFromIso(sl.start)} → ${fmtClockFromIso(sl.end)}` : '';
+    lines.push('── SLEEP ──');
+    if (dateStr)              lines.push(`Date:             ${dateStr}`);
+    if (window)               lines.push(`Window:           ${window}`);
+    lines.push(`Score state:      ${sl.score_state}`);
+    if (sl.performance  != null) lines.push(`Performance:      ${sl.performance.toFixed(0)}%`);
+    if (sl.efficiency   != null) lines.push(`Efficiency:       ${sl.efficiency.toFixed(0)}%`);
+    if (sl.consistency  != null) lines.push(`Consistency:      ${sl.consistency.toFixed(0)}%`);
+    if (sl.respiratory_rate != null) lines.push(`Respiratory rate: ${sl.respiratory_rate.toFixed(1)} rpm`);
+    lines.push(`In bed:           ${fmtMs(inBed)}`);
+    lines.push(`Time asleep:      ${fmtMs(asleep)}`);
+    lines.push(`  Light:          ${fmtMs(light)} (${pct(light)})`);
+    lines.push(`  Deep (SWS):     ${fmtMs(deep)} (${pct(deep)})`);
+    lines.push(`  REM:            ${fmtMs(rem)} (${pct(rem)})`);
+    lines.push(`  Awake:          ${fmtMs(awake)} (${pct(awake)})`);
+    if (sl.disturbances != null) lines.push(`Disturbances:     ${sl.disturbances}`);
+    if (sl.cycles       != null) lines.push(`Sleep cycles:     ${sl.cycles}`);
+    if (sl.needed_milli != null) {
+      lines.push(`\nSleep need:`);
+      if (sl.needed_baseline != null) lines.push(`  Baseline:       ${fmtMs(sl.needed_baseline)}`);
+      if (sl.needed_strain   != null) lines.push(`  Strain debt:    ${fmtMs(sl.needed_strain)}`);
+      if (sl.needed_debt     != null) lines.push(`  Sleep debt:     ${fmtMs(sl.needed_debt)}`);
+      if (sl.needed_nap      != null) lines.push(`  Nap credit:     -${fmtMs(sl.needed_nap)}`);
+      lines.push(`  Total needed:   ${fmtMs(sl.needed_milli)}`);
+    }
+    lines.push('');
+  }
+
+  if (cy) {
+    const kcal = cy.kilojoule ? Math.round(cy.kilojoule * 0.239) : null;
+    lines.push('── DAY STRAIN ──');
+    lines.push(`Strain score:     ${cy.strain.toFixed(1)}`);
+    if (cy.avg_hr)  lines.push(`Avg HR:           ${Math.round(cy.avg_hr)} bpm`);
+    if (cy.max_hr)  lines.push(`Max HR:           ${Math.round(cy.max_hr)} bpm`);
+    if (kcal)       lines.push(`Calories:         ${kcal.toLocaleString()} kcal`);
+    lines.push('');
+  }
+
+  if (bo) {
+    lines.push('── BODY ──');
+    if (bo.height_meter)    lines.push(`Height:           ${Math.round(bo.height_meter * 100)} cm`);
+    if (bo.weight_kilogram) lines.push(`Weight:           ${bo.weight_kilogram.toFixed(1)} kg`);
+    if (bo.max_heart_rate)  lines.push(`Max HR:           ${bo.max_heart_rate} bpm`);
+    lines.push('');
+  }
+
+  if (d._errors && Object.keys(d._errors).length) {
+    lines.push('── API ERRORS ──');
+    Object.entries(d._errors).forEach(([k,v]) => lines.push(`${k}: ${v}`));
+  }
+
+  const txt = lines.join('\n');
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.querySelector('.health-copy-btn');
+    if (btn) { btn.textContent = '✓ Copied'; setTimeout(() => btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy for AI`, 2000); }
+  }).catch(() => prompt('Copy this:', txt));
+}
+
 function renderConnectionsPage() {
   const el = document.getElementById('connections-page');
   if (!el) return;
@@ -4633,7 +5015,7 @@ function goBackToFeed(pushHistory = true) {
   showPage('activities', pushHistory);
 }
 
-const VALID_PAGES = ['overview','dashboard','training','insights','prboard','connections'];
+const VALID_PAGES = ['overview','dashboard','training','insights','prboard','health','connections'];
 
 function handleRoute() {
   const path = window.location.pathname;
@@ -6636,6 +7018,11 @@ init();
   <button class="mbn-tab" data-page="prboard" onclick="showPage('prboard')">
     <svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>
     <span>Records</span>
+  </button>
+
+  <button class="mbn-tab" data-page="health" onclick="showPage('health')">
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    <span>Health</span>
   </button>
 
   <button class="mbn-tab" data-page="connections" onclick="showPage('connections')">
