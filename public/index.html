@@ -3978,19 +3978,8 @@ function renderOverviewPage() {
     <div id="ov-heatmap-area"></div>
     <div class="ov-section-head">Shoes &amp; gear</div>
     <div id="ov-gear-area"></div>
-  </div>
-  <div class="plan-modal-overlay" id="gear-edit-overlay" onclick="if(event.target===this) closeGearModal()">
-    <div class="plan-modal" style="max-height:min(480px,90vh);">
-      <div class="plan-modal-header">
-        <div class="plan-modal-title" id="gear-modal-title">Edit Gear</div>
-        <button class="plan-modal-close" onclick="closeGearModal()">&times;</button>
-      </div>
-      <div class="plan-modal-body" id="gear-modal-body"></div>
-      <div class="plan-modal-footer">
-        <button class="plan-save-btn" onclick="saveGearModal()">Save</button>
-      </div>
-    </div>
   </div>`;
+  ensureGearModal();
   buildOvTiles(document.getElementById('ov-tiles-area'), getPeriodBounds(overviewPeriod));
   buildWeeklyVolumeChart(document.getElementById('ov-vol-area'));
   buildOvCalendar(document.getElementById('ov-cal-container'));
@@ -4146,6 +4135,26 @@ function buildGearSection(container) {
 
 // ─── GEAR EDIT/ADD MODAL ───
 let gearModalMode = 'add', gearModalId = null, gearModalIsCustom = false;
+
+function ensureGearModal() {
+  if (document.getElementById('gear-edit-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'plan-modal-overlay';
+  overlay.id = 'gear-edit-overlay';
+  overlay.setAttribute('onclick', 'if(event.target===this) closeGearModal()');
+  overlay.innerHTML = `
+    <div class="plan-modal" style="max-height:min(480px,90vh);">
+      <div class="plan-modal-header">
+        <div class="plan-modal-title" id="gear-modal-title">Edit Gear</div>
+        <button class="plan-modal-close" onclick="closeGearModal()">&times;</button>
+      </div>
+      <div class="plan-modal-body" id="gear-modal-body"></div>
+      <div class="plan-modal-footer">
+        <button class="plan-save-btn" onclick="saveGearModal()">Save</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
 
 function openAddGearModal() {
   gearModalMode = 'add';
