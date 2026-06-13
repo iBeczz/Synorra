@@ -315,6 +315,186 @@
     .health-score-num { font-size:48px; }
   }
 
+  /* ─── TRAINING PLAN PAGE ─── */
+  #plan-page { display:none; height:100%; overflow-y:auto; overflow-x:hidden; }
+  .plan-inner { max-width:860px; margin:0 auto; padding:40px; box-sizing:border-box; }
+  .plan-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+  .plan-title { font-size:22px; font-weight:700; letter-spacing:-0.04em; }
+  .plan-week-nav { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .plan-week-label { min-width:150px; text-align:center; }
+  .plan-nav-btn {
+    display:flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:8px; flex-shrink:0;
+    background:var(--surface); border:1px solid var(--border2); color:var(--muted);
+    cursor:pointer; transition:all 0.15s;
+  }
+  .plan-nav-btn:hover { border-color:var(--orange-glow); color:var(--text); }
+  .plan-nav-btn svg { width:14px; height:14px; }
+  .plan-today-btn {
+    background:var(--surface); border:1px solid var(--border2); border-radius:8px;
+    padding:7px 14px; font-family:var(--mono); font-size:11px; font-weight:700;
+    letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); cursor:pointer;
+    transition:all 0.15s;
+  }
+  .plan-today-btn:hover { border-color:var(--orange-glow); color:var(--orange); }
+
+  /* week bar */
+  .plan-week-bar { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:24px; }
+  .plan-day-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:14px 8px; text-align:center; cursor:pointer; position:relative;
+    transition:transform 0.18s cubic-bezier(0.16,1,0.3,1), border-color 0.18s, box-shadow 0.18s;
+    animation: tileEnter 0.45s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  .plan-day-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    border-radius:12px 12px 0 0; background:var(--day-color, transparent);
+    opacity:0.7; transition:opacity 0.18s, height 0.18s;
+  }
+  .plan-day-card:hover { border-color:var(--border2); }
+  @media (hover:hover) and (pointer:fine) {
+    .plan-day-card:hover { transform: translateY(-3px); }
+  }
+  .plan-day-card.active {
+    border-color:var(--day-color, var(--orange));
+    box-shadow:0 0 0 1px var(--day-color, var(--orange)) inset, 0 8px 20px rgba(0,0,0,0.25);
+  }
+  .plan-day-card.active::before { opacity:1; height:4px; }
+  .plan-day-card.is-today .plan-day-num { color:var(--orange); }
+  .plan-day-name { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--faint); font-family:var(--mono); margin-bottom:6px; }
+  .plan-day-num { font-size:20px; font-weight:800; letter-spacing:-0.03em; margin-bottom:8px; transition:color 0.15s; }
+  .plan-day-type {
+    font-size:9px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
+    padding:3px 6px; border-radius:4px; display:inline-block; white-space:nowrap;
+    color:var(--day-color); background:var(--day-bg); border:1px solid var(--day-border);
+  }
+  .plan-day-check {
+    position:absolute; top:8px; right:8px; width:16px; height:16px; border-radius:50%;
+    background:#4ade80; display:flex; align-items:center; justify-content:center;
+  }
+  .plan-day-check svg { width:10px; height:10px; stroke:#0e0f0f; stroke-width:3; }
+
+  /* detail panel */
+  .plan-detail {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:22px 24px; animation: planDetailIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes planDetailIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .plan-detail-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+  .plan-detail-date { font-size:16px; font-weight:700; letter-spacing:-0.02em; }
+  .plan-detail-sub { font-size:11px; color:var(--faint); font-family:var(--mono); margin-top:2px; }
+
+  .plan-edit-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--bg); border:1px solid var(--border2); border-radius:8px;
+    padding:7px 14px; font-family:var(--sans); font-size:12px; font-weight:600;
+    color:var(--muted); cursor:pointer; transition:all 0.15s; flex-shrink:0;
+  }
+  .plan-edit-btn:hover { color:var(--text); border-color:var(--orange-glow); }
+  .plan-edit-btn svg { width:13px; height:13px; }
+
+  /* read-only day view */
+  .plan-view-badge {
+    display:inline-block; font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+    padding:5px 12px; border-radius:7px; margin-bottom:14px;
+  }
+  .plan-view-title { font-size:18px; font-weight:700; letter-spacing:-0.02em; margin-bottom:6px; }
+  .plan-view-distance { font-size:13px; color:var(--muted); font-family:var(--mono); margin-bottom:12px; }
+  .plan-view-notes { font-size:13px; color:var(--muted); line-height:1.6; white-space:pre-wrap; padding-top:12px; border-top:1px solid var(--border); }
+  .plan-view-empty { font-size:13px; color:var(--faint); font-style:italic; padding:8px 0 4px; }
+
+  /* edit modal */
+  .plan-modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    display:flex; align-items:center; justify-content:center;
+    z-index:2000; opacity:0; pointer-events:none;
+    transition:opacity 0.2s ease;
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  }
+  .plan-modal-overlay.open { opacity:1; pointer-events:auto; }
+  .plan-modal {
+    background:var(--surface); border:1px solid var(--border2); border-radius:16px;
+    width:min(640px, 92vw); max-height:84vh; display:flex; flex-direction:column;
+    overflow:hidden; transform:translateY(16px) scale(0.98); opacity:0;
+    transition:transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease;
+  }
+  .plan-modal-overlay.open .plan-modal { transform:translateY(0) scale(1); opacity:1; }
+  .plan-modal-header {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:18px 22px; border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .plan-modal-title { font-size:15px; font-weight:700; letter-spacing:-0.02em; }
+  .plan-modal-sub { font-size:11px; color:var(--faint); font-family:var(--mono); margin-top:2px; min-width:100px; text-align:center; }
+  .plan-modal-week-nav { display:flex; align-items:center; gap:8px; }
+  .plan-modal-close {
+    background:var(--bg); border:1px solid var(--border2); border-radius:8px;
+    width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    color:var(--muted); cursor:pointer; font-size:18px; line-height:1; transition:all 0.15s; flex-shrink:0;
+  }
+  .plan-modal-close:hover { color:var(--text); border-color:var(--orange-glow); }
+  .plan-modal-body { overflow-y:auto; padding:18px 22px; display:flex; flex-direction:column; gap:18px; }
+  .plan-modal-day { border-bottom:1px solid var(--border); padding-bottom:18px; }
+  .plan-modal-day:last-child { border-bottom:none; padding-bottom:0; }
+  .plan-modal-day-head { font-size:12px; font-weight:700; letter-spacing:-0.01em; margin-bottom:10px; color:var(--text); }
+  .plan-modal-footer { display:flex; align-items:center; padding:16px 22px; border-top:1px solid var(--border); flex-shrink:0; }
+
+  .plan-type-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .plan-type-chip {
+    font-size:11px; font-weight:700; letter-spacing:0.03em; padding:6px 12px; border-radius:7px;
+    cursor:pointer; border:1px solid var(--border2); color:var(--muted); background:var(--bg);
+    transition:all 0.15s; font-family:var(--mono);
+  }
+  .plan-type-chip:hover { color:var(--text); }
+  .plan-type-chip.active { color:#fff; }
+
+  .plan-field { margin-bottom:12px; }
+  .plan-field label { display:block; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--faint); font-family:var(--mono); margin-bottom:6px; }
+  .plan-field input, .plan-field textarea {
+    width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--border2); border-radius:8px;
+    padding:9px 12px; color:var(--text); font-family:var(--sans); font-size:13px; outline:none;
+    transition:border-color 0.15s; resize:vertical;
+  }
+  .plan-field input:focus, .plan-field textarea:focus { border-color:var(--orange-glow); }
+  .plan-field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .plan-save-row { display:flex; align-items:center; }
+  .plan-save-btn {
+    background:var(--orange); color:#fff; border:none; border-radius:8px;
+    padding:9px 18px; font-family:var(--sans); font-size:12px; font-weight:600;
+    cursor:pointer; transition:opacity 0.15s;
+  }
+  .plan-save-btn:hover { opacity:0.85; }
+  .plan-saved-note { font-size:11px; color:#4ade80; font-family:var(--mono); margin-left:10px; opacity:0; transition:opacity 0.3s; }
+  .plan-saved-note.show { opacity:1; }
+
+  /* completed run card */
+  .plan-completed { margin-top:18px; padding-top:18px; border-top:1px solid var(--border); }
+  .plan-completed-head {
+    display:flex; align-items:center; gap:6px; font-size:10px; font-weight:700; letter-spacing:0.1em;
+    text-transform:uppercase; color:#4ade80; font-family:var(--mono); margin-bottom:12px;
+  }
+  .plan-run-card {
+    background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:14px 16px;
+    cursor:pointer; transition:border-color 0.15s, transform 0.15s;
+  }
+  .plan-run-card:hover { border-color:var(--orange-glow); transform:translateX(2px); }
+  .plan-run-name { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .plan-run-meta { font-size:12px; color:var(--muted); font-family:var(--mono); }
+
+  .plan-rest-note { font-size:13px; color:var(--faint); font-style:italic; padding:8px 0 16px; }
+
+  @media (max-width:767px) {
+    .plan-inner { padding:20px 14px; }
+    .plan-week-bar { gap:5px; }
+    .plan-day-card { padding:10px 4px; }
+    .plan-day-num { font-size:16px; }
+    .plan-day-type { font-size:8px; padding:2px 4px; }
+    .plan-field-row { grid-template-columns:1fr; }
+    .plan-week-label { min-width:110px; font-size:11px; }
+    .plan-modal { width:100vw; max-height:100vh; height:100%; border-radius:0; }
+    .plan-modal-overlay { padding:0; }
+  }
+
   /* ─── PR BOARD ─── */
   .prb-inner { max-width: 1020px; margin: 0 auto; padding: 40px; box-sizing: border-box; }
   .prb-title { font-size: 22px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 4px; }
@@ -822,18 +1002,6 @@
     font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
   }
 
-  .logo-mark {
-    width: 28px; height: 28px; background: none;
-    border-radius: 6px; display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-  }
-
-  .logo-mark img {
-    width: 100%; height: 100%; object-fit: contain; display: block;
-  }
-
-  .logo-mark svg { width: 16px; height: 16px; }
-
   .topbar-right { display: flex; align-items: center; gap: 12px; }
 
   /* ─── CONNECTION STATUS PILLS ─── */
@@ -1321,16 +1489,23 @@
     /* ── Shell: always single column — minmax(0,1fr) stops column expanding to min-content width ── */
     .shell, .shell.sidebar-open {
       grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: calc(56px + env(safe-area-inset-top)) 1fr;
     }
     /* Sidebar never sits beside the detail on mobile —
        the user navigates via the feed / history API    */
     .shell.sidebar-open .sidebar { display: none !important; }
 
     /* ── Topbar ── */
-    .topbar { padding: 0 14px; gap: 8px; }
-    .logo   { font-size: 13px; gap: 8px; }
-    .logo-mark { width: 24px; height: 24px; }
-    .topbar-right { gap: 7px; }
+    .topbar {
+      padding: env(safe-area-inset-top) 14px 0;
+      gap: 8px;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+    }
+    .logo   { font-size: 13px; gap: 8px; grid-column: 2; justify-content: center; }
+    .topbar-right { gap: 7px; grid-column: 3; justify-self: end; }
+    #mobile-menu-btn { grid-column: 1; justify-self: start; }
     .athlete-pill { display: none; }          /* saves room */
     .btn-whoop    { display: none; }          /* connect on desktop */
     .btn-disconnect { font-size: 11px; padding: 4px 9px; }
@@ -1473,25 +1648,25 @@
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       padding: 0 2px;
-      padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
+      padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
     }
     #mobile-bottom-nav::-webkit-scrollbar { display: none; }
     .mbn-tab {
       display: flex; flex-direction: column; align-items: center;
-      gap: 3px; padding: 12px 16px 6px;
+      gap: 2px; padding: 8px 16px 5px;
       border: none; background: none; cursor: pointer;
       white-space: nowrap; flex-shrink: 0;
       color: var(--faint); transition: color 0.15s;
       -webkit-tap-highlight-color: transparent;
     }
-    .mbn-tab svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .mbn-tab svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .mbn-tab span { font-size: 9px; font-family: var(--mono); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
     .mbn-tab.active { color: var(--orange); }
 
     /* Bottom nav spacing — keep content above the bar (bar height + safe area + buffer) */
     #home-feed, #overview-page, #insights-page, #training-page,
-    #pr-board-page, #connections-page, #health-page, .detail {
-      padding-bottom: calc(env(safe-area-inset-bottom) + 90px) !important;
+    #pr-board-page, #connections-page, #health-page, #plan-page, .detail {
+      padding-bottom: calc(env(safe-area-inset-bottom) + 76px) !important;
     }
 
     /* ── PR Board ── */
@@ -1560,15 +1735,13 @@
       Runs
     </button>
     <div class="logo">
-      <div class="logo-mark">
-        <img src="/synorra-logo.png" alt="Synorra logo">
-      </div>
       Synorra
     </div>
     <nav class="topbar-nav" id="topbar-nav" style="display:none;">
       <button class="nav-tab active" data-page="activities" onclick="showPage('activities')">Activities</button>
       <button class="nav-tab" data-page="overview" onclick="showPage('overview')">Overview</button>
       <button class="nav-tab" data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="nav-tab" data-page="plan" onclick="showPage('plan')">Plan</button>
       <button class="nav-tab" data-page="training" onclick="showPage('training')">Training Load</button>
       <button class="nav-tab" data-page="insights" onclick="showPage('insights')">Insights</button>
       <button class="nav-tab" data-page="prboard" onclick="showPage('prboard')">PR Board</button>
@@ -1717,6 +1890,9 @@
 
     <!-- HEALTH PAGE -->
     <div id="health-page"></div>
+
+    <!-- TRAINING PLAN PAGE -->
+    <div id="plan-page"></div>
   </div>
 
 </div>
@@ -2784,6 +2960,7 @@ function showPage(page, pushHistory = true) {
   const insightsPage = document.getElementById('insights-page');
   const overviewPage = document.getElementById('overview-page');
   const healthPage   = document.getElementById('health-page');
+  const planPage     = document.getElementById('plan-page');
 
   // Hide everything
   feed.style.display          = 'none';
@@ -2795,6 +2972,7 @@ function showPage(page, pushHistory = true) {
   insightsPage.style.display  = 'none';
   overviewPage.style.display  = 'none';
   healthPage.style.display    = 'none';
+  planPage.style.display      = 'none';
   sidebar.style.display       = 'none';
   shell.classList.remove('sidebar-open');
   document.getElementById('copy-btn').style.display = 'none';
@@ -2838,6 +3016,10 @@ function showPage(page, pushHistory = true) {
     healthPage.style.display = 'block';
     renderWhoopHealthPage();
     revealPage(healthPage);
+  } else if (page === 'plan') {
+    planPage.style.display = 'block';
+    renderPlanPage();
+    revealPage(planPage);
   } else if (page === 'connections') {
     connPage.style.display = 'block';
     renderConnectionsPage();
@@ -4580,6 +4762,313 @@ function buildTrainingStats() {
   el.querySelectorAll('[data-countup]').forEach(n => countUp(n, +n.dataset.countup, 700));
 }
 
+// ─── TRAINING PLAN ───
+const PLAN_TYPES = {
+  rest:      { label: 'Rest',       color: '#6b7280', bg: 'rgba(107,114,128,0.10)', border: 'rgba(107,114,128,0.25)' },
+  easy:      RUN_TYPES.easy,
+  longRun:   RUN_TYPES.longRun,
+  moderate:  RUN_TYPES.moderate,
+  tempo:     RUN_TYPES.tempo,
+  workout:   RUN_TYPES.workout,
+  timeTrial: RUN_TYPES.timeTrial,
+  race:      RUN_TYPES.race,
+  recovery:  RUN_TYPES.recovery,
+  cross:     { label: 'Cross',      color: '#06b6d4', bg: 'rgba(6,182,212,0.10)',   border: 'rgba(6,182,212,0.25)'   },
+};
+
+const PLAN_CACHE_KEY = 'synorra_plan_v1';
+let planData         = {};
+let planWeekStart    = null;
+let planSelectedDate = null;
+
+function loadPlanData() {
+  try { return JSON.parse(localStorage.getItem(PLAN_CACHE_KEY) || '{}'); } catch { return {}; }
+}
+function savePlanData() {
+  try { localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify(planData)); } catch {}
+}
+
+// Local-timezone-safe date formatting (toISOString() shifts dates across midnight in UTC+ zones)
+function planDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function planTodayStr() {
+  return planDateStr(new Date());
+}
+function planGetMonday(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const diff = (d.getDay() === 0 ? -6 : 1 - d.getDay());
+  d.setDate(d.getDate() + diff);
+  return planDateStr(d);
+}
+
+function renderPlanPage() {
+  const el = document.getElementById('plan-page');
+  if (!el) return;
+  planData = loadPlanData();
+  const today = planTodayStr();
+  if (!planWeekStart)    planWeekStart    = planGetMonday(today);
+  if (!planSelectedDate) planSelectedDate = today;
+
+  el.innerHTML = `
+    <div class="plan-inner">
+      <div class="plan-header">
+        <div class="plan-title">Training Plan</div>
+        <div class="plan-week-nav">
+          <button class="plan-nav-btn" onclick="planChangeWeek(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="plan-week-label" id="plan-week-label"></span>
+          <button class="plan-nav-btn" onclick="planChangeWeek(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+          <button class="plan-today-btn" onclick="planGoToday()">Today</button>
+        </div>
+      </div>
+      <div class="plan-week-bar" id="plan-week-bar"></div>
+      <div class="plan-detail" id="plan-detail"></div>
+    </div>
+
+    <div class="plan-modal-overlay" id="plan-edit-overlay" onclick="if(event.target===this) planCloseEditModal()">
+      <div class="plan-modal">
+        <div class="plan-modal-header">
+          <div class="plan-modal-title">Edit Plan</div>
+          <div class="plan-modal-week-nav">
+            <button class="plan-nav-btn" onclick="planModalChangeWeek(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span class="plan-modal-sub" id="plan-modal-week-label"></span>
+            <button class="plan-nav-btn" onclick="planModalChangeWeek(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+          <button class="plan-modal-close" onclick="planCloseEditModal()">&times;</button>
+        </div>
+        <div class="plan-modal-body" id="plan-modal-body"></div>
+        <div class="plan-modal-footer">
+          <button class="plan-save-btn" onclick="planSaveEdit()">Save Plan</button>
+          <span class="plan-saved-note" id="plan-modal-saved-note">Saved</span>
+        </div>
+      </div>
+    </div>`;
+
+  renderPlanWeekBar();
+  renderPlanDetail();
+}
+
+function renderPlanWeekBar() {
+  const bar = document.getElementById('plan-week-bar');
+  if (!bar) return;
+  const today     = planTodayStr();
+  const dayNames  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const start     = new Date(planWeekStart + 'T00:00:00');
+  const end       = new Date(start); end.setDate(end.getDate() + 6);
+
+  const lbl = document.getElementById('plan-week-label');
+  if (lbl) lbl.textContent = `${start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+
+  bar.innerHTML = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start); d.setDate(d.getDate() + i);
+    const dateStr = planDateStr(d);
+    const entry   = planData[dateStr];
+    const pt      = PLAN_TYPES[entry?.type] || null;
+    const hasRun  = activities.some(a => a.start_date_local && a.start_date_local.slice(0, 10) === dateStr);
+    const vars    = pt ? `--day-color:${pt.color};--day-bg:${pt.bg};--day-border:${pt.border};` : '';
+    return `<div class="plan-day-card ${dateStr === planSelectedDate ? 'active' : ''} ${dateStr === today ? 'is-today' : ''}" style="${vars}" onclick="planSelectDay('${dateStr}')">
+      ${hasRun ? `<div class="plan-day-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
+      <div class="plan-day-name">${dayNames[i]}</div>
+      <div class="plan-day-num">${d.getDate()}</div>
+      ${pt ? `<div class="plan-day-type">${pt.label}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  bar.querySelectorAll('.plan-day-card').forEach((card, i) => { card.style.animationDelay = `${i * 40}ms`; });
+}
+
+function renderPlanDetail() {
+  const el = document.getElementById('plan-detail');
+  if (!el) return;
+  const dateStr = planSelectedDate;
+  const entry   = planData[dateStr] || {};
+  const d       = new Date(dateStr + 'T00:00:00');
+  const today   = planTodayStr();
+  const isToday = dateStr === today;
+  const dateLabel = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const match = activities.find(a => a.start_date_local && a.start_date_local.slice(0, 10) === dateStr);
+  const pt = PLAN_TYPES[entry.type] || null;
+
+  let completedHtml = '';
+  if (match) {
+    const rt   = getRunType(match.id);
+    const km   = ((match.distance || 0) / 1000).toFixed(1);
+    const pace = fmtPace(match.average_speed);
+    completedHtml = `
+      <div class="plan-completed">
+        <div class="plan-completed-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/></svg> Completed</div>
+        <div class="plan-run-card" onclick="planOpenActivity(${match.id})">
+          <div class="plan-run-name">${match.name || 'Run'}</div>
+          <div class="plan-run-meta">${km} km · ${pace}/km · ${rt.label}</div>
+        </div>
+      </div>`;
+  }
+
+  let bodyHtml;
+  if (!pt) {
+    bodyHtml = `<div class="plan-view-empty">Nothing planned for this day yet.</div>`;
+  } else if (entry.type === 'rest') {
+    bodyHtml = `
+      <div class="plan-view-badge" style="color:${pt.color};background:${pt.bg};border:1px solid ${pt.border};">${pt.label}</div>
+      <div class="plan-rest-note" style="padding:0;">Rest day — recovery is part of the plan.</div>`;
+  } else {
+    bodyHtml = `
+      <div class="plan-view-badge" style="color:${pt.color};background:${pt.bg};border:1px solid ${pt.border};">${pt.label}</div>
+      <div class="plan-view-title">${entry.title || pt.label}</div>
+      ${entry.distance ? `<div class="plan-view-distance">Target: ${entry.distance} km</div>` : ''}
+      ${entry.notes ? `<div class="plan-view-notes">${String(entry.notes).replace(/</g, '&lt;')}</div>` : ''}`;
+  }
+
+  el.innerHTML = `
+    <div class="plan-detail-head">
+      <div>
+        <div class="plan-detail-date">${dateLabel}${isToday ? ' · Today' : ''}</div>
+        <div class="plan-detail-sub">${match ? 'Run logged for this day' : 'No activity logged yet'}</div>
+      </div>
+      <button class="plan-edit-btn" onclick="planOpenEditModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Edit Plan
+      </button>
+    </div>
+    ${bodyHtml}
+    ${completedHtml}`;
+}
+
+function planSelectDay(dateStr) {
+  planSelectedDate = dateStr;
+  renderPlanWeekBar();
+  renderPlanDetail();
+}
+
+function planChangeWeek(delta) {
+  const d = new Date(planWeekStart + 'T00:00:00');
+  d.setDate(d.getDate() + delta * 7);
+  planWeekStart = planDateStr(d);
+  renderPlanWeekBar();
+}
+
+function planGoToday() {
+  const today = planTodayStr();
+  planWeekStart    = planGetMonday(today);
+  planSelectedDate = today;
+  renderPlanWeekBar();
+  renderPlanDetail();
+}
+
+let planEditDraft     = {};
+let planModalWeekStart = null;
+
+function planOpenEditModal() {
+  const overlay = document.getElementById('plan-edit-overlay');
+  if (!overlay) return;
+  planEditDraft = {};
+  planModalWeekStart = planWeekStart;
+  renderPlanModalDays();
+  overlay.classList.add('open');
+}
+
+function renderPlanModalDays() {
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const start    = new Date(planModalWeekStart + 'T00:00:00');
+  const end      = new Date(start); end.setDate(end.getDate() + 6);
+  const weekLbl  = `${start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+
+  const daysHtml = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start); d.setDate(d.getDate() + i);
+    const dateStr = planDateStr(d);
+    const entry   = planEditDraft[dateStr] || planData[dateStr] || {};
+    planEditDraft[dateStr] = { ...entry };
+    const dayLabel = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+    const typeChips = Object.entries(PLAN_TYPES).map(([key, pt]) => {
+      const active = entry.type === key;
+      const style  = active ? `background:${pt.color};border-color:${pt.color};` : '';
+      return `<button class="plan-type-chip ${active ? 'active' : ''}" data-type="${key}" style="${style}" onclick="planModalSetType('${dateStr}','${key}',this)">${pt.label}</button>`;
+    }).join('');
+
+    return `
+      <div class="plan-modal-day">
+        <div class="plan-modal-day-head">${dayNames[i]} · ${dayLabel}</div>
+        <div class="plan-type-row">${typeChips}</div>
+        <div class="plan-modal-fields" style="${entry.type === 'rest' ? 'display:none;' : ''}">
+          <div class="plan-field-row">
+            <div class="plan-field"><label>Session title</label><input type="text" value="${(entry.title || '').replace(/"/g, '&quot;')}" oninput="planModalField('${dateStr}','title',this.value)" placeholder="e.g. Easy 8km"></div>
+            <div class="plan-field"><label>Target distance (km)</label><input type="number" step="0.1" value="${entry.distance ?? ''}" oninput="planModalField('${dateStr}','distance',this.value)" placeholder="e.g. 8"></div>
+          </div>
+          <div class="plan-field"><label>Notes</label><textarea rows="2" oninput="planModalField('${dateStr}','notes',this.value)" placeholder="Pace targets, route, intervals...">${entry.notes || ''}</textarea></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('plan-modal-week-label').textContent = weekLbl;
+  document.getElementById('plan-modal-body').innerHTML = daysHtml;
+}
+
+function planModalChangeWeek(delta) {
+  const d = new Date(planModalWeekStart + 'T00:00:00');
+  d.setDate(d.getDate() + delta * 7);
+  planModalWeekStart = planDateStr(d);
+  renderPlanModalDays();
+}
+
+function planCloseEditModal() {
+  document.getElementById('plan-edit-overlay')?.classList.remove('open');
+}
+
+function planModalSetType(dateStr, key, btn) {
+  const entry = planEditDraft[dateStr] || (planEditDraft[dateStr] = {});
+  entry.type = entry.type === key ? '' : key;
+
+  const row = btn.closest('.plan-type-row');
+  row.querySelectorAll('.plan-type-chip').forEach(chip => {
+    const k      = chip.dataset.type;
+    const active = entry.type === k;
+    const pt     = PLAN_TYPES[k];
+    chip.classList.toggle('active', active);
+    chip.style.background  = active ? pt.color : '';
+    chip.style.borderColor = active ? pt.color : '';
+  });
+
+  const fields = row.closest('.plan-modal-day').querySelector('.plan-modal-fields');
+  if (fields) fields.style.display = entry.type === 'rest' ? 'none' : '';
+}
+
+function planModalField(dateStr, field, val) {
+  const entry = planEditDraft[dateStr] || (planEditDraft[dateStr] = {});
+  entry[field] = val;
+}
+
+function planSaveEdit() {
+  Object.entries(planEditDraft).forEach(([date, entry]) => {
+    if (entry.distance !== undefined && entry.distance !== '') entry.distance = +entry.distance;
+    planData[date] = entry;
+  });
+  savePlanData();
+
+  if (planModalWeekStart !== planWeekStart) {
+    const offset = Math.round((new Date(planSelectedDate + 'T00:00:00') - new Date(planWeekStart + 'T00:00:00')) / 86400000);
+    const newSelected = new Date(planModalWeekStart + 'T00:00:00');
+    newSelected.setDate(newSelected.getDate() + offset);
+    planWeekStart    = planModalWeekStart;
+    planSelectedDate = planDateStr(newSelected);
+  }
+
+  const note = document.getElementById('plan-modal-saved-note');
+  if (note) {
+    note.classList.add('show');
+    setTimeout(() => note.classList.remove('show'), 1500);
+  }
+
+  renderPlanWeekBar();
+  renderPlanDetail();
+  setTimeout(planCloseEditModal, 450);
+}
+
+function planOpenActivity(id) {
+  selectActivity(id);
+}
+
 // ─── PR BOARD ───
 let prBoardData = null;
 
@@ -5015,7 +5504,7 @@ function goBackToFeed(pushHistory = true) {
   showPage('activities', pushHistory);
 }
 
-const VALID_PAGES = ['overview','dashboard','training','insights','prboard','health','connections'];
+const VALID_PAGES = ['overview','dashboard','plan','training','insights','prboard','health','connections'];
 
 function handleRoute() {
   const path = window.location.pathname;
@@ -7003,6 +7492,11 @@ init();
   <button class="mbn-tab" data-page="dashboard" onclick="showPage('dashboard')">
     <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     <span>Activity</span>
+  </button>
+
+  <button class="mbn-tab" data-page="plan" onclick="showPage('plan')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Plan</span>
   </button>
 
   <button class="mbn-tab" data-page="training" onclick="showPage('training')">
