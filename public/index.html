@@ -774,6 +774,7 @@
   .ae-stat-val { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; }
   .ae-stat-sub { font-size: 11px; color: var(--faint); font-family: var(--mono); }
   .ae-section-head { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); font-family: var(--mono); margin-bottom: 14px; }
+  .ae-section-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); line-height: 1.7; margin: -6px 0 14px; max-width: 720px; }
   @media (max-width: 767px) {
     .ins-inner { padding: 20px 14px; }
     .ins-r-val { font-size: 42px; }
@@ -792,15 +793,52 @@
   .weather-badge.loaded { display: inline-flex; }
 
   /* ─── GEAR SECTION ─── */
+  .gear-section-actions { display:flex; justify-content:flex-end; margin-bottom:14px; }
+  .gear-add-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--bg); border:1px solid var(--border2); border-radius:8px;
+    padding:7px 14px; font-family:var(--sans); font-size:12px; font-weight:600;
+    color:var(--muted); cursor:pointer; transition:all 0.15s;
+  }
+  .gear-add-btn:hover { color:var(--text); border-color:var(--orange-glow); }
   .gear-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 14px; }
-  .gear-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
-  .gear-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; }
+  .gear-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; position:relative; }
+  .gear-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; padding-right:26px; }
   .gear-card-name { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
   .gear-card-sub { font-size: 11px; color: var(--faint); font-family: var(--mono); margin-bottom: 14px; }
   .gear-bar-wrap { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
   .gear-bar { height: 100%; border-radius: 3px; transition: width 0.7s ease; }
   .gear-card-foot { display: flex; justify-content: space-between; font-size: 10px; font-family: var(--mono); color: var(--faint); }
   .gear-badge { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+  .gear-edit-btn {
+    position:absolute; top:16px; right:16px; width:24px; height:24px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg); border:1px solid var(--border2); border-radius:7px;
+    color:var(--faint); cursor:pointer; transition:all 0.15s;
+  }
+  .gear-edit-btn:hover { color:var(--text); border-color:var(--orange-glow); }
+  .gear-edit-btn svg { width:12px; height:12px; }
+  .gear-retired-section { margin-top:18px; }
+  .gear-retired-head { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); font-family: var(--mono); margin-bottom: 10px; }
+  .gear-retired-list { display:flex; flex-direction:column; gap:6px; }
+  .gear-retired-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 14px; background:var(--surface); border:1px solid var(--border); border-radius:9px;
+    font-size:12px; color:var(--muted); font-family:var(--mono);
+  }
+  .gear-retired-item button {
+    background:var(--bg); border:1px solid var(--border2); border-radius:7px;
+    padding:4px 10px; font-family:var(--sans); font-size:11px; font-weight:600;
+    color:var(--muted); cursor:pointer; transition:all 0.15s;
+  }
+  .gear-retired-item button:hover { color:var(--text); border-color:var(--orange-glow); }
+  .gear-delete-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--bg); border:1px solid rgba(248,113,113,0.3); border-radius:8px;
+    padding:9px 14px; font-family:var(--sans); font-size:12px; font-weight:600;
+    color:#f87171; cursor:pointer; transition:all 0.15s; width:100%; justify-content:center;
+  }
+  .gear-delete-btn:hover { background:rgba(248,113,113,0.08); }
 
   /* ─── RACE COUNTDOWN ─── */
   .race-card {
@@ -3503,9 +3541,16 @@ function renderAerobicTab(container) {
   const activeAerobic = aeFilter==='aerobic' ? 'active' : '';
   const activeAll     = aeFilter==='all'     ? 'active' : '';
   container.innerHTML =
-    '<div style="margin-bottom:24px;font-size:12px;color:var(--muted);font-family:var(--mono);">' + allPairs.length + ' runs with HR data · ' + fmtS(minDate) + ' – ' + fmtS(maxDate) + '</div>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;">' +
+      '<div style="font-size:12px;color:var(--muted);font-family:var(--mono);">' + allPairs.length + ' runs with HR data · ' + fmtS(minDate) + ' – ' + fmtS(maxDate) + '</div>' +
+      '<button class="health-copy-btn" id="ae-copy-btn" onclick="copyAerobicInsights()">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>' +
+        ' Copy for AI' +
+      '</button>' +
+    '</div>' +
     '<div class="ae-stats-grid" id="ae-stats"></div>' +
     '<div class="ae-section-head">HR vs Pace — dots coloured oldest (blue) to most recent (orange)</div>' +
+    '<div class="ae-section-sub">Each dot is one run, plotted by pace (x-axis) against average heart rate (y-axis). A dot further to the lower-left means a faster pace at a lower heart rate — i.e. less cardiovascular effort to cover the same ground. Colour shows recency: if recent (orange) dots sit lower-left of older (blue) dots at similar paces, your aerobic fitness is improving.</div>' +
     '<div class="ins-filter-row">' +
       '<button class="ae-filter-btn ins-filter-btn ' + activeEasy + '" onclick="setAeFilter(\'easy\',this)">Easy &amp; Long runs</button>' +
       '<button class="ae-filter-btn ins-filter-btn ' + activeAerobic + '" onclick="setAeFilter(\'aerobic\',this)">All aerobic</button>' +
@@ -3518,6 +3563,7 @@ function renderAerobicTab(container) {
       '<span style="font-size:10px;color:var(--faint);font-family:var(--mono);white-space:nowrap;">' + fmtS(maxDate) + '</span>' +
     '</div>' +
     '<div class="ae-section-head">HR Efficiency over time — 28-day rolling average</div>' +
+    '<div class="ae-section-sub">Each grey dot is one run\'s efficiency score, calculated as <strong>(average speed ÷ average heart rate) × 1000</strong> — a measure of how much pace you produce per heartbeat. The orange line is a 28-day rolling average of that score. A rising line means you\'re covering more distance per heartbeat over time, i.e. your aerobic base is improving; a falling line can reflect fatigue, increased load, or less easy running.</div>' +
     '<div class="ins-chart-wrap" style="height:260px;margin-bottom:16px;"><canvas id="ae-timeline-canvas"></canvas></div>' +
     '<div class="ins-legend" style="margin-bottom:24px;">' +
       '<div class="ins-legend-item"><span class="ins-dot" style="background:rgba(136,133,128,0.5);"></span>Individual run</div>' +
@@ -3527,6 +3573,79 @@ function renderAerobicTab(container) {
     '<div class="ins-insight-box"><div class="ins-insight-icon">💡</div><div id="ae-insight-text"></div></div>' +
     '<div class="ins-note"><strong>Reading the scatter:</strong> Each dot is one run. If fitness is improving, recent dots (orange) will cluster lower-left vs older dots (blue) — same pace at a lower heart rate, or faster at the same heart rate. Easy &amp; Long runs gives the clearest signal.<br><br><strong>Efficiency score</strong> = speed ÷ avg HR × 1000 (higher = more aerobically efficient). Dot size reflects distance.</div>';
   buildAeCharts();
+}
+
+function copyAerobicInsights() {
+  const pairs = computeAerobicPairs(aeFilter);
+  if (!pairs.length) return;
+  const filterLabel = aeFilter === 'easy' ? 'Easy & Long runs' : aeFilter === 'aerobic' ? 'All aerobic' : 'All runs';
+  function fmtS(s) { return new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+
+  const lines = [`AEROBIC EFFICIENCY DATA — filter: ${filterLabel}`, ''];
+
+  lines.push('── HOW THIS IS CALCULATED ──');
+  lines.push('For each run: efficiency = (average speed in m/s ÷ average heart rate in bpm) × 1000.');
+  lines.push('This is a proxy for aerobic fitness — it represents how much pace you produce per');
+  lines.push('heartbeat. A higher number means more speed for the same cardiovascular effort, or');
+  lines.push('the same speed for less effort. Tracked over time, a rising efficiency score at a');
+  lines.push('similar effort level indicates an improving aerobic base; a falling score can reflect');
+  lines.push('fatigue, increased training load, or a drop in easy/aerobic running.');
+  lines.push('Pace is in min/km, HR is average heart rate for the run in bpm.');
+  lines.push('');
+
+  lines.push('── SUMMARY ──');
+  lines.push(`Runs analysed:    ${pairs.length}`);
+  lines.push(`Date range:       ${fmtS(pairs[0].date)} – ${fmtS(pairs[pairs.length - 1].date)}`);
+
+  const now = new Date();
+  const d4  = new Date(now); d4.setDate(now.getDate() - 28);
+  const d12 = new Date(now); d12.setDate(now.getDate() - 84);
+  const d16 = new Date(now); d16.setDate(now.getDate() - 112);
+  const recent  = pairs.filter(p => p.date >= d4.toISOString().slice(0, 10));
+  const earlier = pairs.filter(p => p.date >= d16.toISOString().slice(0, 10) && p.date < d12.toISOString().slice(0, 10));
+  const avg = arr => arr.length ? +(arr.reduce((s, p) => s + p.eff, 0) / arr.length).toFixed(2) : null;
+  const ra = avg(recent), ea = avg(earlier);
+  lines.push(`Efficiency, last 4 weeks:     ${ra ?? '—'} (${recent.length} runs)`);
+  lines.push(`Efficiency, ~3 months ago:    ${ea ?? '—'} (${earlier.length} runs)`);
+  if (ra != null && ea != null) {
+    const pct = +((ra - ea) / ea * 100).toFixed(1);
+    lines.push(`Change:                       ${pct > 0 ? '+' : ''}${pct}%`);
+  }
+  lines.push('');
+
+  // Monthly trend so the trajectory (visible as the rolling-average graph on-site) is visible in text too
+  const months = {};
+  pairs.forEach(p => {
+    const m = p.date.slice(0, 7);
+    if (!months[m]) months[m] = { pace: [], hr: [], eff: [] };
+    months[m].pace.push(p.pace);
+    months[m].hr.push(p.hr);
+    months[m].eff.push(p.eff);
+  });
+  lines.push('── TREND — monthly averages, oldest to newest ──');
+  lines.push('Month      Runs   Avg Pace   Avg HR   Avg Efficiency');
+  Object.keys(months).sort().forEach(m => {
+    const g = months[m], n = g.eff.length;
+    const avgPace = g.pace.reduce((s, v) => s + v, 0) / n;
+    const avgHr   = Math.round(g.hr.reduce((s, v) => s + v, 0) / n);
+    const avgEff  = +(g.eff.reduce((s, v) => s + v, 0) / n).toFixed(2);
+    lines.push(`${m}    ${String(n).padStart(2)}     ${fmtPaceTick(avgPace)}      ${String(avgHr).padStart(3)}      ${avgEff}`);
+  });
+  lines.push('');
+
+  lines.push('── HR vs PACE — per run, oldest to newest ──');
+  lines.push('Date         Type          Distance   Pace/km   Avg HR   Efficiency');
+  pairs.forEach(p => {
+    const dist = ((p.activity.distance || 0) / 1000).toFixed(1) + 'km';
+    const typeLbl = RUN_TYPES[p.type]?.label || p.type;
+    lines.push(`${p.date}   ${typeLbl.padEnd(12)}  ${dist.padStart(7)}    ${fmtPaceTick(p.pace)}     ${String(p.hr).padStart(3)}      ${p.eff}`);
+  });
+
+  const txt = lines.join('\n');
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('ae-copy-btn');
+    if (btn) { btn.textContent = '✓ Copied'; setTimeout(() => btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy for AI`, 2000); }
+  }).catch(() => prompt('Copy this:', txt));
 }
 
 // WHOOP CORRELATION TAB
@@ -3859,6 +3978,18 @@ function renderOverviewPage() {
     <div id="ov-heatmap-area"></div>
     <div class="ov-section-head">Shoes &amp; gear</div>
     <div id="ov-gear-area"></div>
+  </div>
+  <div class="plan-modal-overlay" id="gear-edit-overlay" onclick="if(event.target===this) closeGearModal()">
+    <div class="plan-modal" style="max-height:min(480px,90vh);">
+      <div class="plan-modal-header">
+        <div class="plan-modal-title" id="gear-modal-title">Edit Gear</div>
+        <button class="plan-modal-close" onclick="closeGearModal()">&times;</button>
+      </div>
+      <div class="plan-modal-body" id="gear-modal-body"></div>
+      <div class="plan-modal-footer">
+        <button class="plan-save-btn" onclick="saveGearModal()">Save</button>
+      </div>
+    </div>
   </div>`;
   buildOvTiles(document.getElementById('ov-tiles-area'), getPeriodBounds(overviewPeriod));
   buildWeeklyVolumeChart(document.getElementById('ov-vol-area'));
@@ -3871,8 +4002,8 @@ function renderOverviewPage() {
   } else {
     gearArea.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--faint);font-size:12px;font-family:var(--mono);"><div class="spinner" style="width:14px;height:14px;border-width:2px;flex-shrink:0;"></div>Loading gear data…</div>`;
     apiFetchSafe('/athlete').then(res => {
-      if (res?.shoes) { athleteShoes = res.shoes; buildGearSection(document.getElementById('ov-gear-area')); }
-      else if (document.getElementById('ov-gear-area')) document.getElementById('ov-gear-area').innerHTML = '<div style="font-size:12px;color:var(--faint);font-family:var(--mono);">No gear found in your Strava profile.</div>';
+      athleteShoes = res?.shoes || [];
+      buildGearSection(document.getElementById('ov-gear-area'));
     });
   }
 }
@@ -3928,27 +4059,54 @@ function windCardinal(deg) {
 
 // ─── GEAR / SHOES ───
 let athleteShoes = [];
+const GEAR_OVERRIDES_KEY = 'synorra_gear_overrides_v1';
+let gearOverrides = {};
+function loadGearOverrides() {
+  try { return JSON.parse(localStorage.getItem(GEAR_OVERRIDES_KEY) || '{}'); } catch { return {}; }
+}
+function saveGearOverrides() {
+  try { localStorage.setItem(GEAR_OVERRIDES_KEY, JSON.stringify(gearOverrides)); } catch {}
+}
 
 function buildGearSection(container) {
   if (!container) return;
-  if (!athleteShoes.length) {
-    container.innerHTML = '<div style="font-size:12px;color:var(--faint);font-family:var(--mono);padding:4px 0;">No shoes found in your Strava profile — add gear to your Strava account to track it here.</div>';
-    return;
-  }
+  gearOverrides = loadGearOverrides();
+
   const distByGear = {}, lastByGear = {};
   activities.forEach(a => {
     if (!a.gear_id) return;
     distByGear[a.gear_id] = (distByGear[a.gear_id] || 0) + (a.distance || 0);
     if (!lastByGear[a.gear_id] || a.start_date_local > lastByGear[a.gear_id]) lastByGear[a.gear_id] = a.start_date_local;
   });
-  const threshold = 700;
-  const cards = athleteShoes.map(shoe => {
-    const stravaKm = Math.round((shoe.distance || 0) / 1000);
-    const ourKm    = Math.round((distByGear[shoe.id] || 0) / 1000);
-    const displayKm = stravaKm || ourKm;
+
+  const customEntries = Object.entries(gearOverrides)
+    .filter(([, ov]) => ov.custom)
+    .map(([id, ov]) => ({ id, name: ov.name, distance: (ov.distance || 0) * 1000, primary: false, custom: true }));
+  const allGear = [...athleteShoes.map(s => ({ ...s, custom: false })), ...customEntries];
+
+  const addBtn = `<div class="gear-section-actions"><button class="gear-add-btn" onclick="openAddGearModal()">+ Add gear</button></div>`;
+
+  if (!allGear.length) {
+    container.innerHTML = `${addBtn}<div style="font-size:12px;color:var(--faint);font-family:var(--mono);padding:4px 0;">No gear yet — add shoes to your Strava profile or add a custom item here.</div>`;
+    return;
+  }
+
+  const defaultThreshold = 700;
+  const active = [], retired = [];
+  allGear.forEach(item => {
+    const ov = gearOverrides[item.id] || {};
+    (ov.retired ? retired : active).push({ item, ov });
+  });
+
+  const cards = active.map(({ item, ov }) => {
+    const name = ov.name || item.name || 'Unknown';
+    const threshold = ov.threshold || defaultThreshold;
+    const stravaKm = Math.round((item.distance || 0) / 1000);
+    const ourKm    = Math.round((distByGear[item.id] || 0) / 1000);
+    const displayKm = item.custom ? (ov.distance || 0) : (stravaKm || ourKm);
     const pct = Math.min(100, (displayKm / threshold) * 100);
-    const last = lastByGear[shoe.id]
-      ? new Date(lastByGear[shoe.id].slice(0, 10)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    const last = lastByGear[item.id]
+      ? new Date(lastByGear[item.id].slice(0, 10)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
       : '—';
     let bar, badge;
     if (pct >= 90) {
@@ -3959,16 +4117,107 @@ function buildGearSection(container) {
       badge = `<span class="gear-badge" style="background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.28);">Getting worn</span>`;
     } else {
       bar = '#4ade80';
-      badge = shoe.primary ? `<span class="gear-badge" style="background:var(--orange-dim);color:var(--orange);border:1px solid var(--orange-glow);">Active</span>` : '';
+      badge = item.primary ? `<span class="gear-badge" style="background:var(--orange-dim);color:var(--orange);border:1px solid var(--orange-glow);">Active</span>` : '';
     }
     return `<div class="gear-card">
-      <div class="gear-card-top"><div class="gear-card-name">${shoe.name || 'Unknown'}</div>${badge}</div>
+      <button class="gear-edit-btn" onclick="openEditGearModal('${item.id}', ${item.custom})" aria-label="Edit gear" title="Edit gear">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+      <div class="gear-card-top"><div class="gear-card-name">${name}</div>${badge}</div>
       <div class="gear-card-sub">${displayKm} km · ${threshold} km threshold · ${pct.toFixed(0)}% worn</div>
       <div class="gear-bar-wrap"><div class="gear-bar" style="width:${pct.toFixed(1)}%;background:${bar};"></div></div>
-      <div class="gear-card-foot"><span>${displayKm} / ${threshold} km</span><span>Last used ${last}</span></div>
+      <div class="gear-card-foot"><span>${displayKm} / ${threshold} km</span><span>${item.custom ? 'Custom item' : 'Last used ' + last}</span></div>
     </div>`;
   });
-  container.innerHTML = `<div class="gear-grid">${cards.join('')}</div>`;
+
+  let retiredHtml = '';
+  if (retired.length) {
+    retiredHtml = `<div class="gear-retired-section"><div class="gear-retired-head">Retired</div><div class="gear-retired-list">
+      ${retired.map(({ item, ov }) => `
+        <div class="gear-retired-item">
+          <span>${ov.name || item.name || 'Unknown'}</span>
+          <button onclick="openEditGearModal('${item.id}', ${item.custom})">Edit</button>
+        </div>`).join('')}
+    </div></div>`;
+  }
+
+  container.innerHTML = `${addBtn}<div class="gear-grid">${cards.join('')}</div>${retiredHtml}`;
+}
+
+// ─── GEAR EDIT/ADD MODAL ───
+let gearModalMode = 'add', gearModalId = null, gearModalIsCustom = false;
+
+function openAddGearModal() {
+  gearModalMode = 'add';
+  gearModalId = null;
+  gearModalIsCustom = true;
+  document.getElementById('gear-modal-title').textContent = 'Add Gear';
+  document.getElementById('gear-modal-body').innerHTML = `
+    <div class="plan-field"><label>Name</label><input type="text" id="gear-input-name" placeholder="e.g. Nike Pegasus 41"></div>
+    <div class="plan-field-row">
+      <div class="plan-field"><label>Current distance (km)</label><input type="number" step="1" min="0" id="gear-input-distance" value="0"></div>
+      <div class="plan-field"><label>Wear threshold (km)</label><input type="number" step="1" min="1" id="gear-input-threshold" value="700"></div>
+    </div>`;
+  document.getElementById('gear-edit-overlay').classList.add('open');
+}
+
+function openEditGearModal(id, isCustom) {
+  gearModalMode = 'edit';
+  gearModalId = id;
+  gearModalIsCustom = isCustom;
+  const ov = gearOverrides[id] || {};
+  const stravaShoe = athleteShoes.find(s => s.id === id);
+  const baseName = ov.name || stravaShoe?.name || '';
+  const baseThreshold = ov.threshold || 700;
+  const baseDistance = isCustom ? (ov.distance || 0) : Math.round((stravaShoe?.distance || 0) / 1000);
+  const retired = !!ov.retired;
+
+  document.getElementById('gear-modal-title').textContent = 'Edit Gear';
+  document.getElementById('gear-modal-body').innerHTML = `
+    <div class="plan-field"><label>Display name</label><input type="text" id="gear-input-name" value="${baseName.replace(/"/g, '&quot;')}"></div>
+    <div class="plan-field-row">
+      <div class="plan-field"><label>${isCustom ? 'Current distance (km)' : 'Distance (from Strava)'}</label><input type="number" step="1" min="0" id="gear-input-distance" value="${baseDistance}" ${isCustom ? '' : 'disabled'}></div>
+      <div class="plan-field"><label>Wear threshold (km)</label><input type="number" step="1" min="1" id="gear-input-threshold" value="${baseThreshold}"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer;">
+      <input type="checkbox" id="gear-input-retired" ${retired ? 'checked' : ''}> Mark as retired (hide from main view)
+    </label>
+    ${isCustom ? `<button class="gear-delete-btn" onclick="deleteCustomGear('${id}')">Delete this item</button>` : ''}`;
+  document.getElementById('gear-edit-overlay').classList.add('open');
+}
+
+function closeGearModal() {
+  document.getElementById('gear-edit-overlay')?.classList.remove('open');
+}
+
+function saveGearModal() {
+  const name      = document.getElementById('gear-input-name').value.trim();
+  const distance  = +document.getElementById('gear-input-distance').value || 0;
+  const threshold = +document.getElementById('gear-input-threshold').value || 700;
+  const retired   = document.getElementById('gear-input-retired')?.checked || false;
+
+  if (gearModalMode === 'add') {
+    const id = `custom_${Date.now()}`;
+    gearOverrides[id] = { custom: true, name: name || 'New gear', distance, threshold, retired: false };
+  } else {
+    const ov = gearOverrides[gearModalId] || {};
+    ov.threshold = threshold;
+    ov.retired = retired;
+    if (name) ov.name = name;
+    if (gearModalIsCustom) { ov.custom = true; ov.distance = distance; }
+    gearOverrides[gearModalId] = ov;
+  }
+  saveGearOverrides();
+  closeGearModal();
+  buildGearSection(document.getElementById('ov-gear-area'));
+}
+
+function deleteCustomGear(id) {
+  if (!confirm('Remove this gear item?')) return;
+  delete gearOverrides[id];
+  saveGearOverrides();
+  closeGearModal();
+  buildGearSection(document.getElementById('ov-gear-area'));
 }
 
 // ─── RACE / GOAL COUNTDOWN ───
