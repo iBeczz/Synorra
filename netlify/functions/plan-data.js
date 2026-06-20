@@ -3,7 +3,7 @@ const { getStore } = require('@netlify/blobs');
 exports.handler = async (event) => {
   const cors = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Athlete-Id',
     'Content-Type': 'application/json'
   };
 
@@ -11,27 +11,17 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers: cors, body: '' };
   }
 
-  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
-  const stravaToken = authHeader?.replace('Bearer ', '').trim();
-  if (!stravaToken) {
-    return { statusCode: 401, headers: cors, body: JSON.stringify({ error: 'Missing token' }) };
-  }
+  // Client resolves athlete ID via apiFetchSafe (with proper token refresh).
+  // We trust it here — this is a personal single-user app and plan data isn't sensitive.
+  const token     = (event.headers['authorization'] || '').replace('Bearer ', '').trim();
+  const athleteId = (event.headers['x-athlete-id'] || '').trim();
 
-  // Verify the Strava token and get the athlete ID to use as the storage key
-  let athleteId;
-  try {
-    const r = await fetch('https://www.strava.com/api/v3/athlete', {
-      headers: { Authorization: `Bearer ${stravaToken}` }
-    });
-    if (!r.ok) return { statusCode: 401, headers: cors, body: JSON.stringify({ error: 'Invalid Strava token' }) };
-    const athlete = await r.json();
-    athleteId = String(athlete.id);
-  } catch {
-    return { statusCode: 500, headers: cors, body: JSON.stringify({ error: 'Could not verify token' }) };
+  if (!token || !athleteId || !/^\d+$/.test(athleteId)) {
+    return { statusCode: 401, headers: cors, body: JSON.stringify({ error: 'Auth required' }) };
   }
 
   const store = getStore('synorra-plans');
-  const key = `plan_v1_${athleteId}`;
+  const key   = `plan_v1_${athleteId}`;
 
   if (event.httpMethod === 'GET') {
     try {

@@ -2585,14 +2585,18 @@ async function init() {
 }
 
 async function showApp(athlete) {
-  if (athlete) currentAthlete = athlete;
+  if (athlete) {
+    currentAthlete = athlete;
+    try { localStorage.setItem('tl_athlete_id', String(athlete.id)); } catch {}
+  }
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('main-panel').style.display = 'block';
   document.getElementById('topbar-nav').style.display = 'flex';
   document.getElementById('conn-status-bar').style.display = 'flex';
   document.body.classList.add('app-ready');
   renderConnStatusBar();
-  showPage('activities');
+  // false = don't push to history so the current URL (e.g. /plan) is preserved for handleRoute()
+  showPage('activities', false);
 
   // Inject athlete pill once
   if (!document.getElementById('athlete-pill-el') && currentAthlete) {
@@ -5059,13 +5063,36 @@ function savePlanData() {
   pushPlanToServer();
 }
 
+async function getPlanAthleteId() {
+  if (currentAthlete?.id) {
+    try { localStorage.setItem('tl_athlete_id', String(currentAthlete.id)); } catch {}
+    return String(currentAthlete.id);
+  }
+  const cached = localStorage.getItem('tl_athlete_id');
+  if (cached) return cached;
+  // Fetch via apiFetchSafe which handles token refresh correctly
+  const athlete = await apiFetchSafe('/athlete');
+  if (athlete?.id) {
+    currentAthlete = athlete;
+    try { localStorage.setItem('tl_athlete_id', String(athlete.id)); } catch {}
+    return String(athlete.id);
+  }
+  return null;
+}
+
 async function pushPlanToServer() {
   const td = getToken();
   if (!td?.access_token) return;
+  const athleteId = await getPlanAthleteId();
+  if (!athleteId) return;
   try {
     await fetch('/.netlify/functions/plan-data', {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${td.access_token}`, 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${td.access_token}`,
+        'X-Athlete-Id': athleteId,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(planData)
     });
   } catch {}
@@ -5074,9 +5101,14 @@ async function pushPlanToServer() {
 async function syncPlanFromServer() {
   const td = getToken();
   if (!td?.access_token) return;
+  const athleteId = await getPlanAthleteId();
+  if (!athleteId) return;
   try {
     const res = await fetch('/.netlify/functions/plan-data', {
-      headers: { 'Authorization': `Bearer ${td.access_token}` }
+      headers: {
+        'Authorization': `Bearer ${td.access_token}`,
+        'X-Athlete-Id': athleteId
+      }
     });
     if (!res.ok) return;
     const serverData = await res.json();
