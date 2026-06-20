@@ -3,5 +3,7 @@
   "version": "1.0.0",
   "description": "Strava + Whoop fitness dashboard",
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0"
+  }
 }

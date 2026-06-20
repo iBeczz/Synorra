@@ -3064,6 +3064,7 @@ function showPage(page, pushHistory = true) {
     planPage.style.display = 'block';
     renderPlanPage();
     revealPage(planPage);
+    syncPlanFromServer();
   } else if (page === 'connections') {
     connPage.style.display = 'block';
     renderConnectionsPage();
@@ -5050,6 +5051,39 @@ function loadPlanData() {
 }
 function savePlanData() {
   try { localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify(planData)); } catch {}
+  pushPlanToServer();
+}
+
+async function pushPlanToServer() {
+  const td = getToken();
+  if (!td?.access_token) return;
+  try {
+    await fetch('/.netlify/functions/plan-data', {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${td.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(planData)
+    });
+  } catch {}
+}
+
+async function syncPlanFromServer() {
+  const td = getToken();
+  if (!td?.access_token) return;
+  try {
+    const res = await fetch('/.netlify/functions/plan-data', {
+      headers: { 'Authorization': `Bearer ${td.access_token}` }
+    });
+    if (!res.ok) return;
+    const serverData = await res.json();
+    if (!serverData || !Object.keys(serverData).length) return;
+    if (JSON.stringify(serverData) === JSON.stringify(planData)) return;
+    planData = serverData;
+    try { localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify(planData)); } catch {}
+    if (document.getElementById('plan-page')?.style.display !== 'none') {
+      renderPlanWeekBar();
+      renderPlanDetail();
+    }
+  } catch {}
 }
 
 // Local-timezone-safe date formatting (toISOString() shifts dates across midnight in UTC+ zones)
