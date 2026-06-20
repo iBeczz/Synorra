@@ -5086,7 +5086,7 @@ async function pushPlanToServer() {
   const athleteId = await getPlanAthleteId();
   if (!athleteId) return;
   try {
-    await fetch('/.netlify/functions/plan-data', {
+    const res = await fetch('/.netlify/functions/plan-data', {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${td.access_token}`,
@@ -5095,7 +5095,12 @@ async function pushPlanToServer() {
       },
       body: JSON.stringify(planData)
     });
-  } catch {}
+    const syncEl = document.getElementById('plan-sync-status');
+    if (syncEl) syncEl.textContent = res.ok ? 'Saved & synced ✓' : `Save error ${res.status}`;
+  } catch (e) {
+    const syncEl = document.getElementById('plan-sync-status');
+    if (syncEl) syncEl.textContent = 'Save failed: ' + e.message;
+  }
 }
 
 async function syncPlanFromServer() {
@@ -5110,17 +5115,31 @@ async function syncPlanFromServer() {
         'X-Athlete-Id': athleteId
       }
     });
-    if (!res.ok) return;
+    const syncEl = document.getElementById('plan-sync-status');
+    if (!res.ok) {
+      if (syncEl) syncEl.textContent = `Sync error ${res.status}`;
+      return;
+    }
     const serverData = await res.json();
-    if (!serverData || !Object.keys(serverData).length) return;
-    if (JSON.stringify(serverData) === JSON.stringify(planData)) return;
+    if (!serverData || !Object.keys(serverData).length) {
+      if (syncEl) syncEl.textContent = 'Synced (no server data yet)';
+      return;
+    }
+    if (JSON.stringify(serverData) === JSON.stringify(planData)) {
+      if (syncEl) syncEl.textContent = 'Synced ✓';
+      return;
+    }
     planData = serverData;
     try { localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify(planData)); } catch {}
+    if (syncEl) syncEl.textContent = 'Synced ✓ (updated)';
     if (document.getElementById('plan-page')?.style.display !== 'none') {
       renderPlanWeekBar();
       renderPlanDetail();
     }
-  } catch {}
+  } catch (e) {
+    const syncEl = document.getElementById('plan-sync-status');
+    if (syncEl) syncEl.textContent = 'Sync failed: ' + e.message;
+  }
 }
 
 // Local-timezone-safe date formatting (toISOString() shifts dates across midnight in UTC+ zones)
@@ -5148,7 +5167,10 @@ function renderPlanPage() {
   el.innerHTML = `
     <div class="plan-inner">
       <div class="plan-header">
-        <div class="plan-title">Training Plan</div>
+        <div>
+          <div class="plan-title">Training Plan</div>
+          <div id="plan-sync-status" style="font-size:10px;font-family:var(--mono);color:var(--faint);margin-top:3px;">Syncing…</div>
+        </div>
         <div class="plan-week-nav">
           <button class="plan-nav-btn" onclick="planChangeWeek(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
           <span class="plan-week-label" id="plan-week-label"></span>

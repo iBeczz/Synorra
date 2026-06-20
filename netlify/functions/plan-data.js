@@ -1,4 +1,4 @@
-const { getStore } = require('@netlify/blobs');
+const { getSiteStore } = require('@netlify/blobs');
 
 exports.handler = async (event) => {
   const cors = {
@@ -11,8 +11,6 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers: cors, body: '' };
   }
 
-  // Client resolves athlete ID via apiFetchSafe (with proper token refresh).
-  // We trust it here — this is a personal single-user app and plan data isn't sensitive.
   const token     = (event.headers['authorization'] || '').replace('Bearer ', '').trim();
   const athleteId = (event.headers['x-athlete-id'] || '').trim();
 
@@ -20,14 +18,16 @@ exports.handler = async (event) => {
     return { statusCode: 401, headers: cors, body: JSON.stringify({ error: 'Auth required' }) };
   }
 
-  const store = getStore('synorra-plans');
+  // getSiteStore persists across deploys; getStore is deploy-scoped and wiped on each push
+  const store = getSiteStore('synorra-plans');
   const key   = `plan_v1_${athleteId}`;
 
   if (event.httpMethod === 'GET') {
     try {
       const data = await store.get(key, { type: 'json' });
       return { statusCode: 200, headers: cors, body: JSON.stringify(data || {}) };
-    } catch {
+    } catch (e) {
+      console.error('Blobs GET error:', e);
       return { statusCode: 200, headers: cors, body: JSON.stringify({}) };
     }
   }
@@ -37,8 +37,9 @@ exports.handler = async (event) => {
       const data = JSON.parse(event.body || '{}');
       await store.set(key, JSON.stringify(data));
       return { statusCode: 200, headers: cors, body: JSON.stringify({ ok: true }) };
-    } catch {
-      return { statusCode: 500, headers: cors, body: JSON.stringify({ error: 'Save failed' }) };
+    } catch (e) {
+      console.error('Blobs PUT error:', e);
+      return { statusCode: 500, headers: cors, body: JSON.stringify({ error: e.message }) };
     }
   }
 
