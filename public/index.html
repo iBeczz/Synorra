@@ -420,12 +420,13 @@
   }
   .plan-modal-overlay.open .plan-modal { transform:translateY(0) scale(1); opacity:1; }
   .plan-modal-header {
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:18px 22px; border-bottom:1px solid var(--border); flex-shrink:0;
+    display:flex; flex-direction:column;
+    padding:16px 22px 0; border-bottom:1px solid var(--border); flex-shrink:0;
   }
+  .plan-modal-header-row { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; }
   .plan-modal-title { font-size:15px; font-weight:700; letter-spacing:-0.02em; }
-  .plan-modal-sub { font-size:11px; color:var(--faint); font-family:var(--mono); margin-top:2px; min-width:100px; text-align:center; }
-  .plan-modal-week-nav { display:flex; align-items:center; gap:8px; }
+  .plan-modal-sub { font-size:11px; color:var(--faint); font-family:var(--mono); min-width:100px; text-align:center; }
+  .plan-modal-week-nav { display:flex; align-items:center; justify-content:center; gap:8px; padding-bottom:14px; flex:1; }
   .plan-modal-close {
     background:var(--bg); border:1px solid var(--border2); border-radius:8px;
     width:30px; height:30px; display:flex; align-items:center; justify-content:center;
@@ -491,8 +492,12 @@
     .plan-day-type { font-size:8px; padding:2px 4px; }
     .plan-field-row { grid-template-columns:1fr; }
     .plan-week-label { min-width:110px; font-size:11px; }
-    .plan-modal { width:100vw; max-height:100vh; height:100%; border-radius:0; }
+    .plan-modal { width:100vw; max-height:100dvh; height:100dvh; border-radius:0; }
     .plan-modal-overlay { padding:0; }
+    .plan-modal-header { padding:14px 16px 0; }
+    .plan-modal-body { padding:14px 16px; }
+    .plan-modal-footer { padding:14px 16px calc(14px + env(safe-area-inset-bottom)); }
+    .plan-modal-footer .plan-save-btn { width:100%; justify-content:center; }
   }
 
   /* ─── PR BOARD ─── */
@@ -5121,29 +5126,39 @@ function renderPlanPage() {
       </div>
       <div class="plan-week-bar" id="plan-week-bar"></div>
       <div class="plan-detail" id="plan-detail"></div>
-    </div>
-
-    <div class="plan-modal-overlay" id="plan-edit-overlay" onclick="if(event.target===this) planCloseEditModal()">
-      <div class="plan-modal">
-        <div class="plan-modal-header">
-          <div class="plan-modal-title">Edit Plan</div>
-          <div class="plan-modal-week-nav">
-            <button class="plan-nav-btn" onclick="planModalChangeWeek(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-            <span class="plan-modal-sub" id="plan-modal-week-label"></span>
-            <button class="plan-nav-btn" onclick="planModalChangeWeek(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
-          </div>
-          <button class="plan-modal-close" onclick="planCloseEditModal()">&times;</button>
-        </div>
-        <div class="plan-modal-body" id="plan-modal-body"></div>
-        <div class="plan-modal-footer">
-          <button class="plan-save-btn" onclick="planSaveEdit()">Save Plan</button>
-          <span class="plan-saved-note" id="plan-modal-saved-note">Saved</span>
-        </div>
-      </div>
     </div>`;
 
+  ensurePlanModal();
   renderPlanWeekBar();
   renderPlanDetail();
+}
+
+function ensurePlanModal() {
+  if (document.getElementById('plan-edit-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'plan-modal-overlay';
+  overlay.id = 'plan-edit-overlay';
+  overlay.setAttribute('onclick', 'if(event.target===this) planCloseEditModal()');
+  overlay.innerHTML = `
+    <div class="plan-modal">
+      <div class="plan-modal-header">
+        <div class="plan-modal-header-row">
+          <div class="plan-modal-title">Edit Plan</div>
+          <button class="plan-modal-close" onclick="planCloseEditModal()">&times;</button>
+        </div>
+        <div class="plan-modal-week-nav">
+          <button class="plan-nav-btn" onclick="planModalChangeWeek(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="plan-modal-sub" id="plan-modal-week-label"></span>
+          <button class="plan-nav-btn" onclick="planModalChangeWeek(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+      <div class="plan-modal-body" id="plan-modal-body"></div>
+      <div class="plan-modal-footer">
+        <button class="plan-save-btn" onclick="planSaveEdit()">Save Plan</button>
+        <span class="plan-saved-note" id="plan-modal-saved-note">Saved</span>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
 }
 
 function renderPlanWeekBar() {
