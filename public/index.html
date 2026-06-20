@@ -24,7 +24,7 @@
     --border2: rgba(255,255,255,0.12);
     --text: #f0ede8;
     --muted: #888580;
-    --faint: #444240;
+    --faint: #615f5c;
     --orange: #FC4C02;
     --orange-dim: rgba(252,76,2,0.12);
     --orange-glow: rgba(252,76,2,0.25);
@@ -343,6 +343,7 @@
   .plan-day-card {
     background:var(--surface); border:1px solid var(--border); border-radius:12px;
     padding:14px 8px; text-align:center; cursor:pointer; position:relative;
+    overflow:hidden;
     transition:transform 0.18s cubic-bezier(0.16,1,0.3,1), border-color 0.18s, box-shadow 0.18s;
     animation: tileEnter 0.45s cubic-bezier(0.16,1,0.3,1) both;
   }
@@ -1209,10 +1210,10 @@
   .empty-state p { font-size: 13px; }
 
   /* ─── DETAIL ─── */
-  .detail { padding: 28px 32px; }
+  .detail { padding: 36px 40px; max-width: 1200px; margin: 0 auto; }
 
-  .detail-header { margin-bottom: 24px; }
-  .detail-title { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .detail-header { margin-bottom: 32px; }
+  .detail-title { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 6px; }
   .detail-meta { font-size: 12px; color: var(--muted); font-family: var(--mono); }
 
   .type-badge {
@@ -1225,41 +1226,45 @@
   /* ─── METRICS GRID ─── */
   .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 10px;
-    margin-bottom: 28px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
   }
 
   .metric {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
+    border-radius: 16px;
+    padding: 20px 22px;
+    transition: border-color 0.15s;
   }
+  .metric:hover { border-color: var(--border2); }
 
   .metric-val {
     font-family: var(--mono);
-    font-size: 22px; font-weight: 500;
+    font-size: 26px; font-weight: 600;
     color: var(--text);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 8px;
   }
 
   .metric-lbl {
-    font-size: 10px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--faint); margin-top: 4px;
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted);
   }
 
   .metric.highlight { border-color: var(--orange-glow); background: var(--orange-dim); }
   .metric.highlight .metric-val { color: var(--orange); }
 
   /* ─── SECTION ─── */
-  .section { margin-bottom: 28px; }
+  .section { margin-bottom: 40px; }
   .section-head {
-    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--faint);
-    margin-bottom: 14px;
-    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
   }
   .section-head::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
@@ -1286,16 +1291,26 @@
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); font-family: var(--mono); }
   .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
 
-  .chart-wrap { position: relative; width: 100%; height: 240px; }
-  .chart-wrap canvas { cursor: crosshair; }
+  .chart-wrap { position: relative; width: 100%; height: 240px; cursor: crosshair; user-select: none; }
+  .chart-wrap canvas { cursor: inherit; }
+  .chart-zoom-hint {
+    position: absolute; top: 6px; right: 8px; z-index: 10;
+    font-size: 9px; font-family: var(--mono); color: var(--muted);
+    background: rgba(14,15,17,0.88); padding: 3px 9px; border-radius: 5px;
+    border: 1px solid var(--border2); pointer-events: none; opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .chart-zoom-hint.visible { opacity: 1; pointer-events: auto; cursor: pointer; }
+  .chart-zoom-hint.visible:hover { border-color: var(--orange-glow); color: var(--orange); }
 
   /* ─── ZONES ─── */
-  .zone-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .zone-name { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 56px; flex-shrink: 0; }
-  .zone-track { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .zone-row { display: flex; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .zone-row:last-child { border-bottom: none; }
+  .zone-name { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 60px; flex-shrink: 0; }
+  .zone-track { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
   .zone-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
-  .zone-pct { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
-  .zone-time { font-family: var(--mono); font-size: 11px; color: var(--faint); width: 40px; text-align: right; }
+  .zone-pct { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); width: 36px; text-align: right; }
+  .zone-time { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 44px; text-align: right; }
 
   /* ─── SPIKES ─── */
   .spike-grid { display: flex; flex-direction: column; gap: 0; }
@@ -1364,11 +1379,13 @@
     font-family: var(--mono); font-size: 10px; font-weight: 500;
     text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--faint); text-align: left;
-    padding: 6px 12px; border-bottom: 1px solid var(--border);
+    padding: 6px 8px; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
   }
   .splits-table td {
     font-family: var(--mono); font-size: 12px; color: var(--muted);
-    padding: 9px 12px; border-bottom: 1px solid var(--border);
+    padding: 8px 8px; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
   }
   .splits-table tr:last-child td { border-bottom: none; }
   .splits-table td:first-child { color: var(--text); font-weight: 500; }
@@ -1430,7 +1447,7 @@
   .map-splits-layout { display: flex; gap: 14px; align-items: stretch; }
 
   .splits-panel {
-    width: 340px;
+    width: 310px;
     flex-shrink: 0;
     height: 620px;
     overflow: hidden;
@@ -1593,23 +1610,23 @@
     .sidebar-back { padding: 12px 16px; font-size: 12px; }
 
     /* ── Activity detail ── */
-    .detail { padding: 16px 14px; }
-    .detail-header { margin-bottom: 16px; }
+    .detail { padding: 18px 16px; max-width: none; }
+    .detail-header { margin-bottom: 18px; }
     .detail-title  { font-size: 18px; }
     .detail-meta   { font-size: 11px; }
 
     /* ── Metrics grid: tighter ── */
     .metrics-grid {
-      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
       gap: 8px;
-      margin-bottom: 18px;
+      margin-bottom: 22px;
     }
-    .metric     { padding: 10px 10px; }
-    .metric-val { font-size: 17px; }
+    .metric { padding: 14px 14px; border-radius: 12px; }
+    .metric-val { font-size: 20px; margin-bottom: 5px; }
     .metric-lbl { font-size: 9px; }
 
     /* ── Sections ── */
-    .section { margin-bottom: 18px; }
+    .section { margin-bottom: 24px; }
 
     /* ── Stream chart: horizontally scrollable ── */
     .chart-box  { padding: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -2080,6 +2097,21 @@ function runTypeBadgeHtml(actId) {
 let currentChart = null;
 let streamData = null;
 let currentActivity = null;
+let chartViewport = { start: 0, end: 1 };
+let chartViewportOffset = 0;
+let chartDragging = false;
+let chartDragStartX = 0;
+let chartDragStartViewport = null;
+let chartRebuildRaf = null;
+// Chart state cached for flicker-free viewport updates
+let _chartN = 0;
+let _chartCurrentStep = 1;
+let _chartKmTicks = [];
+let _chartSmoothedRaws = {};
+let _chartActiveEntries = [];
+let _chartBandPreComp = null;
+let _chartBandStarts = null;
+let _chartBandWeights = null;
 let activities = [];
 let whoopData = null;
 let whoopConnectError = null;
@@ -2098,8 +2130,8 @@ let activeStreams = new Set(['hr', 'pace']);
 
 const STREAM_CFG = {
   hr:    { label:'HR',      color:'#f87171', unit:'bpm',  side:'left',  key:'heartrate',        xform: v => v || null, reversed: false, fill: false },
-  pace:  { label:'Pace',    color:'#60a5fa', unit:'/km',  side:'right', key:'velocity_smooth',  xform: v => v > 0 ? parseFloat((1000/v/60).toFixed(3)) : null, reversed: true, fill: false },
-  gap:   { label:'GAP',     color:'#38bdf8', unit:'/km',  side:'right', key:'gap',              xform: v => v > 0 ? parseFloat((1000/v/60).toFixed(3)) : null, reversed: true, fill: false },
+  pace:  { label:'Pace',    color:'#60a5fa', unit:'/km',  side:'right', key:'velocity_smooth',  xform: v => v > 0 ? parseFloat((1000/v/60).toFixed(3)) : null, reversed: true, fill: false, smooth: 12 },
+  gap:   { label:'GAP',     color:'#38bdf8', unit:'/km',  side:'right', key:'gap',              xform: v => v > 0 ? parseFloat((1000/v/60).toFixed(3)) : null, reversed: true, fill: false, smooth: 12 },
   elev:  { label:'Elev',    color:'#4ade80', unit:'m',    side:'right', key:'altitude',         xform: v => v ?? null, reversed: false, fill: true  },
   cad:   { label:'Cadence', color:'#c084fc', unit:'spm',  side:'left',  key:'cadence',          xform: v => v ? v*2 : null, reversed: false, fill: false },
   grade: { label:'Grade',   color:'#fbbf24', unit:'%',    side:'left',  key:'grade_smooth',     xform: v => v ?? null, reversed: false, fill: false },
@@ -6114,6 +6146,7 @@ function renderDetail(act, streams) {
   initZoneSlider();
   activeStreams = new Set(['hr', 'pace']);
   pinnedSplitKm = null; chartSplitActiveKm = null; pinnedLapIdx = null; chartSplitActiveLap = null; pinnedPR = null;
+  chartViewport = { start: 0, end: 1 }; chartViewportOffset = 0;
   rebuildChart();
   initMap(streams);
   renderWhoopSection();
@@ -6143,15 +6176,40 @@ function rebuildChart() {
   const timeArr = streamData.time?.data || [];
   const distArr = streamData.distance?.data || [];
   const N = timeArr.length; if (!N) return;
-  const step = Math.max(1, Math.floor(N / 400));
-  const labels = [];
-  for (let i = 0; i < N; i += step) labels.push(distArr[i] ? (distArr[i]/1000).toFixed(2) : (timeArr[i]/60).toFixed(1));
 
-  // Find which label indices land at each 1 km mark (for per-band x-axis and tick filtering)
+  // Viewport slicing for zoom/pan (fractions 0–1 of the full run)
+  const vStart = Math.max(0, Math.floor(chartViewport.start * N));
+  const vEnd   = Math.min(N, Math.ceil(chartViewport.end * N));
+  const viewN  = Math.max(1, vEnd - vStart);
+  chartViewportOffset = vStart;
+  const step = Math.max(1, Math.floor(viewN / 600)); // higher res when zoomed in
+
+  // Pre-smooth velocity streams in raw (m/s) space to reduce GPS jitter
+  const smoothedRaws = {};
+  for (const [, cfg] of Object.entries(STREAM_CFG)) {
+    if (!cfg.smooth) continue;
+    const raw = streamData[cfg.key]?.data;
+    if (!raw) continue;
+    const win = cfg.smooth;
+    const out = new Array(raw.length);
+    for (let i = 0; i < raw.length; i++) {
+      let sum = 0, cnt = 0;
+      for (let j = Math.max(0, i - win); j <= Math.min(raw.length - 1, i + win); j++) {
+        if (raw[j] != null && raw[j] > 0) { sum += raw[j]; cnt++; }
+      }
+      out[i] = cnt > 0 ? sum / cnt : null;
+    }
+    smoothedRaws[cfg.key] = out;
+  }
+
+  const labels = [];
+  for (let i = vStart; i < vEnd; i += step) labels.push(distArr[i] ? (distArr[i]/1000).toFixed(2) : (timeArr[i]/60).toFixed(1));
+
+  // km tick marks for the x-axis
   const kmTicks = [];
-  { let nextKm = 1;
+  { let nextKm = Math.floor((distArr[vStart] || 0) / 1000) + 1;
     for (let li = 0; li < labels.length; li++) {
-      const d = distArr[Math.min(li * step, N - 1)] / 1000;
+      const d = (distArr[Math.min(vStart + li * step, N - 1)] || 0) / 1000;
       while (d >= nextKm) { kmTicks.push({ labelIdx: li, km: nextKm }); nextKm++; }
     }
   }
@@ -6169,23 +6227,34 @@ function rebuildChart() {
   // Bands with outliers > 1× the core range get 200 px instead of 140 px.
   const ROW_H      = 140;
   const ROW_H_TALL = 200;
-  const EDGE_FRAC  = 0.15; // outer zone fraction each side (15%)
-  const ASINH_CAP  = Math.asinh(4); // outer zone saturates at 4× the scale unit
+  const EDGE_FRAC  = 0.15;
+  const ASINH_CAP  = Math.asinh(4);
 
+  // bandPreComp always uses the FULL run — keeps Y-scale fixed while panning/zooming
+  const fullStep = Math.max(1, Math.floor(N / 600));
   const bandPreComp = activeEntries.map(([, cfg]) => {
-    const raw = streamData[cfg.key]?.data || [];
+    const baseRaw = streamData[cfg.key]?.data || [];
+    const workRaw = smoothedRaws[cfg.key] || baseRaw;
     const vs = [];
-    for (let i = 0; i < N; i += step) {
-      const v = cfg.xform(raw[i] ?? null);
+    for (let i = 0; i < N; i += fullStep) {
+      const v = cfg.xform(workRaw[i] ?? null);
       if (v != null) vs.push(v);
     }
     if (!vs.length) return { absMin: 0, absMax: 1, coreMin: 0, coreMax: 1, rowH: ROW_H };
     vs.sort((a, b) => a - b);
     const pct = (p) => vs[Math.min(vs.length - 1, Math.max(0, Math.floor(p * vs.length)))];
-    const absMin = vs[0], absMax = vs[vs.length - 1];
+    let absMin = vs[0], absMax = vs[vs.length - 1];
     let coreMin = pct(0.05), coreMax = pct(0.95);
     if (coreMax <= coreMin) { coreMin = absMin; coreMax = absMax; }
     if (coreMax <= coreMin) coreMax = coreMin + 1;
+    // Pad pace/GAP y-axis ±20 sec so the line doesn't pin to the edges
+    if (cfg.reversed && cfg.unit === '/km') {
+      const buf = 20 / 60;
+      coreMin = Math.max(0.5, coreMin - buf);
+      coreMax = coreMax + buf;
+      absMin  = Math.max(0.3, absMin - buf);
+      absMax  = absMax + buf;
+    }
     const cRange  = coreMax - coreMin;
     const outFrac = Math.max((coreMin - absMin) / cRange, (absMax - coreMax) / cRange);
     return { absMin, absMax, coreMin, coreMax, rowH: outFrac > 1 ? ROW_H_TALL : ROW_H };
@@ -6195,18 +6264,26 @@ function rebuildChart() {
   let cumY = 0;
   const bandStarts  = bandPreComp.map(d => { const s = cumY; cumY += d.rowH / ROW_H; return s; });
   const bandWeights = bandPreComp.map(d => d.rowH / ROW_H);
-  const totalY      = cumY; // y-axis max
+  const totalY      = cumY;
+
+  // Cache chart state so updateChartViewport() can do fast in-place updates (no flicker)
+  _chartN = N;
+  _chartCurrentStep = step;
+  _chartSmoothedRaws = smoothedRaws;
+  _chartActiveEntries = activeEntries;
+  _chartBandPreComp = bandPreComp;
+  _chartBandStarts = bandStarts;
+  _chartBandWeights = bandWeights;
+  _chartKmTicks = kmTicks;
 
   for (let idx = 0; idx < numBands; idx++) {
     const [, cfg] = activeEntries[idx];
-    const raw = streamData[cfg.key]?.data || [];
+    const baseRaw = streamData[cfg.key]?.data || [];
+    const raw = smoothedRaws[cfg.key] || baseRaw;
     const { absMin, absMax, coreMin, coreMax, rowH } = bandPreComp[idx];
     const yStart = bandStarts[idx];
-    const bandH  = rowH / ROW_H; // height in y-units
+    const bandH  = rowH / ROW_H;
 
-    // Asinh outer-zone: scale is anchored to the core width, NOT to absMax.
-    // This means two mildly slow points (7:23 vs 8:01/km with core edge at 7:00)
-    // still visually separate even when a 91:35/km outlier drives absMax to a huge number.
     const scale = (coreMax - coreMin) * 0.3;
     const softNorm = (v) => {
       if (v <= coreMin) {
@@ -6222,10 +6299,9 @@ function rebuildChart() {
       return EDGE_FRAC + ((v - coreMin) / (coreMax - coreMin)) * (1 - 2 * EDGE_FRAC);
     };
 
-    // Normalise into variable-height band; store raw values for accurate tooltip
     const rawVals = [];
     const data = [];
-    for (let i = 0; i < N; i += step) {
+    for (let i = vStart; i < vEnd; i += step) {
       const v = cfg.xform(raw[i] ?? null);
       rawVals.push(v);
       if (v == null) { data.push(null); continue; }
@@ -6243,17 +6319,15 @@ function rebuildChart() {
       tension: 0.3, spanGaps: true,
       _unit: cfg.unit, _reversed: cfg.reversed,
       _rawVals: rawVals,
-      _minV: absMin, _maxV: absMax, // used by swimLane axis labels
+      _minV: absMin, _maxV: absMax,
       _bandIdx: idx
     });
   }
 
   const canvas = document.getElementById('main-chart'); if (!canvas) return;
   if (currentChart) { currentChart.destroy(); currentChart = null; }
-  // Remove stale per-band tooltip elements so they don't linger across rebuilds
   canvas.parentNode.querySelectorAll('.chart-ext-tooltip').forEach(e => e.remove());
 
-  // Variable-height canvas: tall bands for metrics with significant outliers
   canvas.parentNode.style.height = bandPreComp.reduce((s, d) => s + d.rowH, 0) + 'px';
 
   const legend = document.getElementById('chart-legend');
@@ -6272,22 +6346,20 @@ function rebuildChart() {
         legend: { display: false },
         crosshair: {},
         splitHighlight: {},
-        swimLane: { entries: activeEntries, bandStarts, bandWeights, bandPreComp, kmTicks, EDGE_FRAC, BAND_PAD },
+        swimLane: { entries: activeEntries, bandStarts, bandWeights, bandPreComp, kmTicks: _chartKmTicks, EDGE_FRAC, BAND_PAD },
         tooltip: {
           enabled: false,
           external(context) {
             const { chart, tooltip } = context;
             const wrap = chart.canvas.parentNode;
 
-            // Hide all band tooltips when cursor leaves the chart
             if (tooltip.opacity === 0) {
               wrap.querySelectorAll('.chart-ext-tooltip').forEach(e => e.style.opacity = '0');
               return;
             }
 
-            // Shared header data (distance + elapsed) — shown only on the first band
             const chartIdx    = tooltip.dataPoints?.[0]?.dataIndex ?? -1;
-            const rawIdx      = chartIdx >= 0 ? Math.min(N - 1, chartIdx * step) : -1;
+            const rawIdx      = chartIdx >= 0 ? Math.min(_chartN - 1, chartViewportOffset + chartIdx * _chartCurrentStep) : -1;
             const elapsedSecs = rawIdx >= 0 ? (streamData?.time?.data?.[rawIdx] ?? null) : null;
             const elapsedStr  = elapsedSecs != null ? fmtTime(elapsedSecs) : null;
             const distLabel   = tooltip.title?.[0] || '--';
@@ -6298,7 +6370,6 @@ function rebuildChart() {
               const actualV = ds._rawVals?.[dp.dataIndex];
               if (actualV == null) return;
 
-              // Get or create a dedicated tooltip element for this band
               let el = wrap.querySelector(`.chart-ext-tooltip[data-band="${i}"]`);
               if (!el) {
                 el = document.createElement('div');
@@ -6307,7 +6378,6 @@ function rebuildChart() {
                 wrap.appendChild(el);
               }
 
-              // Format value
               const unit = ds._unit || '';
               let valStr;
               if (ds._reversed && unit === '/km') {
@@ -6323,21 +6393,17 @@ function rebuildChart() {
               el.innerHTML = headerHTML + `<span style="color:${ds.borderColor};">${ds.label}: ${valStr}</span>`;
               el.style.opacity = '1';
 
-              // X: follow cursor, flip to left side if near right edge
               const elW = el.offsetWidth || 110;
               const x   = caretX + 14;
               el.style.left = Math.min(Math.max(8, x), Math.max(8, wrap.offsetWidth - elW - 8)) + 'px';
 
-              // Y: vertically centred within this metric's swim-lane band
               const bIdx         = ds._bandIdx;
               const canvasTop    = chart.canvas.offsetTop;
               const bandTopPx    = canvasTop + chart.scales.y.getPixelForValue(bandStarts[bIdx] + bandWeights[bIdx]);
               const bandBottomPx = canvasTop + chart.scales.y.getPixelForValue(bandStarts[bIdx]);
               el.style.top       = Math.round((bandTopPx + bandBottomPx) / 2) + 'px';
-              // translateY(-50%) is set in CSS so the element centres on that Y
             });
 
-            // Hide any leftover tooltips from bands that are no longer active
             wrap.querySelectorAll('.chart-ext-tooltip').forEach(el => {
               if (parseInt(el.dataset.band ?? '0') >= (tooltip.dataPoints?.length ?? 0)) {
                 el.style.opacity = '0';
@@ -6350,14 +6416,182 @@ function rebuildChart() {
         x: {
           ticks: {
             maxTicksLimit: 500,
-            callback: (val, idx) => { const kt = kmTicks.find(t => t.labelIdx === idx); return kt ? kt.km + ' km' : null; },
-            color: '#444240', font: { size: 10, family: "'DM Mono', monospace" }
+            callback: (val, idx) => { const kt = _chartKmTicks.find(t => t.labelIdx === idx); return kt ? kt.km + ' km' : null; },
+            color: '#615f5c', font: { size: 10, family: "'DM Mono', monospace" }
           },
-          grid: { display: false } // km grid lines are drawn per-band by swimLane plugin
+          grid: { display: false }
         },
         y: { position: 'left', min: 0, max: totalY, display: false, grid: { display: false } }
       }
     }
+  });
+
+  // Wire up zoom/pan interactions (guard prevents double-init across toggleStream calls)
+  initChartInteraction();
+  // Update zoom indicator
+  const wrap = canvas.parentNode;
+  let hint = wrap.querySelector('.chart-zoom-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.className = 'chart-zoom-hint';
+    hint.title = 'Double-click to reset zoom';
+    hint.addEventListener('click', () => { chartViewport = { start: 0, end: 1 }; updateChartViewport(); });
+    wrap.appendChild(hint);
+  }
+  const zoomed = (chartViewport.end - chartViewport.start) < 0.99;
+  hint.textContent = zoomed ? `${Math.round(100 / (chartViewport.end - chartViewport.start))}× zoom · dbl-click to reset` : '';
+  hint.classList.toggle('visible', zoomed);
+}
+
+// ─── CHART ZOOM / PAN ───
+
+// Fast in-place viewport update — NO chart destroy, NO flicker.
+// Called by wheel/drag interactions. rebuildChart() is only called on stream toggle or new activity.
+function updateChartViewport() {
+  if (!currentChart || !_chartBandPreComp || !_chartN) { rebuildChart(); return; }
+
+  const N = _chartN;
+  const vStart = Math.max(0, Math.floor(chartViewport.start * N));
+  const vEnd   = Math.min(N, Math.ceil(chartViewport.end * N));
+  const viewN  = Math.max(1, vEnd - vStart);
+  chartViewportOffset = vStart;
+  const step = Math.max(1, Math.floor(viewN / 600));
+  _chartCurrentStep = step;
+
+  const distArr = streamData.distance?.data || [];
+  const timeArr = streamData.time?.data || [];
+
+  // New labels for viewport
+  const labels = [];
+  for (let i = vStart; i < vEnd; i += step)
+    labels.push(distArr[i] ? (distArr[i]/1000).toFixed(2) : (timeArr[i]/60).toFixed(1));
+
+  // New km tick marks
+  const kmTicks = [];
+  { let nextKm = Math.floor((distArr[vStart] || 0) / 1000) + 1;
+    for (let li = 0; li < labels.length; li++) {
+      const d = (distArr[Math.min(vStart + li * step, N - 1)] || 0) / 1000;
+      while (d >= nextKm) { kmTicks.push({ labelIdx: li, km: nextKm }); nextKm++; }
+    }
+  }
+  _chartKmTicks = kmTicks;
+  currentChart.options.plugins.swimLane.kmTicks = kmTicks;
+
+  const EDGE_FRAC = 0.15;
+  const ASINH_CAP = Math.asinh(4);
+
+  // Recompute data arrays for each band using cached globals (Y-scale stays fixed)
+  currentChart.data.labels = labels;
+  for (let idx = 0; idx < _chartActiveEntries.length; idx++) {
+    const [, cfg] = _chartActiveEntries[idx];
+    const raw = _chartSmoothedRaws[cfg.key] || streamData[cfg.key]?.data || [];
+    const { absMin, absMax, coreMin, coreMax, rowH } = _chartBandPreComp[idx];
+    const yStart = _chartBandStarts[idx];
+    const bandH  = rowH / 140; // ROW_H = 140
+
+    const scale = (coreMax - coreMin) * 0.3;
+    const softNorm = (v) => {
+      if (v <= coreMin) {
+        if (absMin >= coreMin) return EDGE_FRAC;
+        const t = Math.min(1, Math.asinh((coreMin - v) / scale) / ASINH_CAP);
+        return EDGE_FRAC * (1 - t);
+      }
+      if (v >= coreMax) {
+        if (absMax <= coreMax) return 1 - EDGE_FRAC;
+        const t = Math.min(1, Math.asinh((v - coreMax) / scale) / ASINH_CAP);
+        return (1 - EDGE_FRAC) + EDGE_FRAC * t;
+      }
+      return EDGE_FRAC + ((v - coreMin) / (coreMax - coreMin)) * (1 - 2 * EDGE_FRAC);
+    };
+
+    const data = [], rawVals = [];
+    for (let i = vStart; i < vEnd; i += step) {
+      const v = cfg.xform(raw[i] ?? null);
+      rawVals.push(v);
+      if (v == null) { data.push(null); continue; }
+      let norm = softNorm(v);
+      if (cfg.reversed) norm = 1 - norm;
+      data.push(yStart + BAND_PAD + norm * (bandH - 2 * BAND_PAD));
+    }
+    currentChart.data.datasets[idx].data = data;
+    currentChart.data.datasets[idx]._rawVals = rawVals;
+  }
+
+  // Re-render without animation — canvas stays visible, no flicker
+  currentChart.update('none');
+
+  // Update zoom hint
+  const wrap = currentChart.canvas?.parentNode;
+  if (wrap) {
+    let hint = wrap.querySelector('.chart-zoom-hint');
+    if (hint) {
+      const zoomed = (chartViewport.end - chartViewport.start) < 0.99;
+      hint.textContent = zoomed ? `${Math.round(100 / (chartViewport.end - chartViewport.start))}× zoom · dbl-click to reset` : '';
+      hint.classList.toggle('visible', zoomed);
+    }
+  }
+}
+
+function scheduleViewportUpdate() {
+  if (chartRebuildRaf) cancelAnimationFrame(chartRebuildRaf);
+  chartRebuildRaf = requestAnimationFrame(() => { chartRebuildRaf = null; updateChartViewport(); });
+}
+
+function initChartInteraction() {
+  const wrap = document.querySelector('.chart-wrap');
+  if (!wrap || wrap._interactInit) return;
+  wrap._interactInit = true;
+
+  // Scroll wheel → zoom around cursor position
+  wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = wrap.getBoundingClientRect();
+    const fracX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const range = chartViewport.end - chartViewport.start;
+    const factor = e.deltaY > 0 ? 1.3 : (1 / 1.3); // zoom out / zoom in
+    const newRange = Math.max(0.04, Math.min(1, range * factor));
+    const pivot = chartViewport.start + fracX * range;
+    let s = pivot - fracX * newRange;
+    let en = s + newRange;
+    if (s < 0) { s = 0; en = newRange; }
+    if (en > 1) { en = 1; s = 1 - newRange; }
+    chartViewport = { start: s, end: en };
+    scheduleViewportUpdate(); // fast path — no chart destroy
+  }, { passive: false });
+
+  // Drag to pan
+  wrap.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    try { wrap.setPointerCapture(e.pointerId); } catch {}
+    chartDragging = true;
+    chartDragStartX = e.clientX;
+    chartDragStartViewport = { ...chartViewport };
+    wrap.style.cursor = 'grabbing';
+  });
+
+  wrap.addEventListener('pointermove', e => {
+    if (!chartDragging) return;
+    const dx = (e.clientX - chartDragStartX) / wrap.offsetWidth;
+    const range = chartDragStartViewport.end - chartDragStartViewport.start;
+    let s = chartDragStartViewport.start - dx * range;
+    s = Math.max(0, Math.min(1 - range, s));
+    chartViewport = { start: s, end: s + range };
+    scheduleViewportUpdate(); // fast path — no chart destroy
+  });
+
+  const endDrag = e => {
+    if (!chartDragging) return;
+    chartDragging = false;
+    try { wrap.releasePointerCapture(e.pointerId); } catch {}
+    wrap.style.cursor = 'crosshair';
+  };
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+
+  // Double-click → reset zoom (still uses fast path)
+  wrap.addEventListener('dblclick', () => {
+    chartViewport = { start: 0, end: 1 };
+    updateChartViewport();
   });
 }
 
@@ -6639,8 +6873,10 @@ function syncMapToChartIndex(chartIdx) {
   const dist   = streamData.distance?.data || [];
   if (!latlng) return;
   const N = dist.length;
-  const step = Math.max(1, Math.floor(N / 400));
-  const rawIdx = Math.min(latlng.length - 1, chartIdx * step);
+  const vStart = Math.max(0, Math.floor(chartViewport.start * N));
+  const vEnd   = Math.min(N, Math.ceil(chartViewport.end * N));
+  const step = Math.max(1, Math.floor((vEnd - vStart) / 600));
+  const rawIdx = Math.min(latlng.length - 1, vStart + chartIdx * step);
   if (latlng[rawIdx]) { mapMarker.setLatLng(latlng[rawIdx]); mapMarker.setOpacity(1); }
 }
 
